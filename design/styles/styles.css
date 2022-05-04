@@ -23,8 +23,12 @@
     position: absolute;
     height: 100%;
     width: 100%;
-    background: rgb(238,174,202);
-    background: radial-gradient(circle, rgba(0, 0, 0, 1) 30%, rgba(255, 0, 206,0.1) 100%);
+    background: radial-gradient(ellipse, rgb(0, 0, 0) 30%, rgb(138, 0, 113) 100%);
+}
+
+.header-txt {
+    font-family: monospace;
+    color: aqua;
 }
 
 .console {
