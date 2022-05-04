@@ -1,26 +1,32 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {useEffect, useState} from 'react';
+import {signalServer} from "./api/signals";
 
-function App() {
+export default function App() {
+
+  const [sendSignal, setSendSignal] = useState()
+
+  const sendSignal = signalServer("localhost:8080/ws", (signal) => {
+    if (signal.type === "Offer") {
+      console.log("RECEIVED offer")
+    } else {
+      console.log("RECEIVED answer")
+    }
+  })
+
+  const [status, setStatus] = useState("disabled")
+
+  useEffect(() => {
+    setTimeout(()=> {
+
+      setSendSignal()
+    }, 3000)
+  });
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <div>
+      <header>
+        <h1>current connection state is {status.toUpperCase()}</h1>
       </header>
     </div>
   );
 }
-
-export default App;
