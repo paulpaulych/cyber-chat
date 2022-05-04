@@ -1,17 +1,16 @@
-use std::{
-    collections::{HashMap},
-};
+use std::collections::HashMap;
 
 use actix::prelude::*;
 
 pub struct SignalReq {
-    pub src: usize,
+    pub from_id: usize,
     pub signal: Signal,
 }
 impl Message for SignalReq {
     type Result = ();
 }
 
+#[derive(Clone)]
 pub enum Signal {
     Offer { sdp: String },
     Answer { sdp: String },
@@ -40,7 +39,9 @@ pub struct SignalServer {
 
 impl SignalServer {
     pub fn new() -> SignalServer {
-        SignalServer { peers: HashMap::new() }
+        SignalServer {
+            peers: HashMap::new(),
+        }
     }
 }
 
@@ -52,11 +53,9 @@ impl Handler<Connect> for SignalServer {
     type Result = usize;
 
     fn handle(&mut self, msg: Connect, _: &mut Context<Self>) -> Self::Result {
-        log::debug!("Someone connected");
-
         let id = self.peers.len();
 
-        log::debug!("generated id = {}", id);
+        log::debug!("Peer connected. Generated id = {}", id);
 
         self.peers.insert(id.to_owned(), msg.signaller);
 
@@ -78,7 +77,7 @@ impl Handler<SignalReq> for SignalServer {
     type Result = ();
 
     fn handle(&mut self, msg: SignalReq, _: &mut Context<Self>) {
-        let bla = msg.src;
+        let bla = msg.from_id;
         let dests = self
             .peers
             .iter()
@@ -86,7 +85,7 @@ impl Handler<SignalReq> for SignalServer {
             .map(|(_, dest)| dest);
 
         for dest in dests {
-            dest.do_send(msg.signal.into())
+            dest.do_send(msg.signal.clone())
         }
     }
 }
