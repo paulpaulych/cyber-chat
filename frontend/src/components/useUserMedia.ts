@@ -15,11 +15,16 @@ export function useUserMedia(
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        let didCancel = false;
+        if (stream) return
+
+        let didCancel = false
 
         navigator.mediaDevices.getUserMedia(constraints)
-            .then((s) => { if (!didCancel) { setStream(s) } })
-            .catch((e) => { if (!didCancel) { setError(e) } })
+            .then(s => { if (!didCancel) { setStream(s) } })
+            .catch(e => {
+                console.error(e)
+                if (!didCancel) { setError(e) }
+            })
 
         return () => {
             didCancel = true
