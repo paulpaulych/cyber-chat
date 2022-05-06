@@ -1,17 +1,16 @@
-import {WebSocketServer, webSocketServer} from "../network/websocket";
+import {useEffect, useState} from "react";
+import WebSocket from "isomorphic-ws";
 
 export type IncomingSignal =
     | { type: "Offer", sdp: string }
     | { type: "Answer", sdp: string }
 
-export type OutcomingSignal =
-    | { type: "Offer", sdp: string }
-    | { type: "Answer", sdp: string }
+export function useIncomingSignal(ws: WebSocket) {
+    const [signal, setSignal] = useState<IncomingSignal | null>(null)
 
-export type SignalServer = WebSocketServer<OutcomingSignal, IncomingSignal>;
+    ws.onmessage = (msg) => {
+        setSignal(JSON.parse(msg.data as string))
+    }
 
-export function runSignalServer(
-    url: string,
-): SignalServer {
-    return webSocketServer<OutcomingSignal, IncomingSignal>(url)
+    return signal
 }

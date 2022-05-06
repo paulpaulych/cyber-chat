@@ -1,16 +1,11 @@
 import {useEffect, useState} from "react";
 
-export type UserMedia = {
-    stream: MediaStream | null
-    error: string | null
-}
-
 export function useUserMedia(
     constraints: MediaStreamConstraints = {
         audio: true,
         video: true
     }
-): UserMedia {
+): [MediaStream | null, string | null] {
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +27,7 @@ export function useUserMedia(
         };
     }, [constraints, stream, error]);
 
-    return { stream, error };
+    return [stream, error];
 }
 
 const stop = (stream: MediaStream | null) => {

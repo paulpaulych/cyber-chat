@@ -101,6 +101,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for Session {
                 self.last_hb = Instant::now();
             }
             ws::Message::Text(text) =>{
+                log::debug!("received message from {}: {}", self.id, text);
+
                 let req: SignalReqDto = serde_json::from_str(&text).unwrap();
                 let signal = webrtc::Signal::from(req);
 

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use actix::prelude::*;
 
+#[derive(Debug)]
 pub struct SignalReq {
     pub from_id: usize,
     pub signal: Signal,
@@ -11,6 +12,7 @@ impl Message for SignalReq {
 }
 
 #[derive(Clone)]
+#[derive(Debug)]
 pub enum Signal {
     Offer { sdp: String },
     Answer { sdp: String },
@@ -77,14 +79,14 @@ impl Handler<SignalReq> for SignalServer {
     type Result = ();
 
     fn handle(&mut self, msg: SignalReq, _: &mut Context<Self>) {
-        let bla = msg.from_id;
         let dests = self
             .peers
             .iter()
-            .filter(|&(&peer_id, _)| peer_id != bla)
+            .filter(|&(&peer_id, _)| peer_id != msg.from_id)
             .map(|(_, dest)| dest);
 
         for dest in dests {
+            log::debug!("sending signal {:?} to {:?}", msg.signal, dest);
             dest.do_send(msg.signal.clone())
         }
     }
