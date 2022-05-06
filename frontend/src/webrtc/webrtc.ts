@@ -1,32 +1,52 @@
 import {useEffect, useState} from "react";
-import WebSocket from "isomorphic-ws";
-import {useIncomingSignal} from "./signals";
+import {Signal, SignalServer} from "./SignalServer";
 
-export function useRemoteStream(
-    ws: WebSocket
-) {
-    const [conn] = useState(new RTCPeerConnection())
+export function useRemoteMedia(
+    server: SignalServer,
+    conn: RTCPeerConnection
+): { stream: MediaStream | null, error: string | null } {
     const [stream, setStream] = useState<MediaStream | null>(null)
-
-    const offer = useIncomingSignal(ws)
-
+    const [offer, setOffer] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
+
+    const [ready, setReady] = useState(false)
+
+    useEffect(() => {
+        const onSignal = (s) => {
+            const data: Signal = JSON.parse(s.data)
+            if(data.type !== "Offer") {
+                setError("Offer expected but got " + JSON.stringify(s))
+                return
+            }
+            setOffer(data.sdp)
+        }
+
+        server.subscribe(onSignal)
+
+        return () => {
+            server.subscribe(onSignal)
+        }
+    }, [server, conn])
 
     useEffect(() => {
         if (!offer) return
 
-        console.log(`received offer: ${offer}`)
+        console.log(`received offer: ${JSON.stringify(offer)}`)
+        console.log(`sending answer...`)
 
-        answerFor(conn, offer.sdp)
-            .then((a) => sendAnswer(ws, a))
-            .catch((e) => setError(e))
+        prepareAnswer(conn, offer)
+            .then((a) => server.sendSignal({type: "Answer", sdp: a.sdp}))
+            .then(() => setReady(true))
+            .catch((e) => setError(`can't send answer: ${e.message}`))
+    }, [server, conn])
 
-        conn.addEventListener("track", (event) => {
-            setStream(event.streams[0])
-        })
-
-        return () => conn.close()
-    }, [ws, conn, offer])
+    useEffect(() => {
+        if (ready) {
+            conn.addEventListener("track", (event) => {
+                setStream(event.streams[0])
+            })
+        }
+    }, [conn, ready])
 
     return {
         stream,
@@ -34,60 +54,76 @@ export function useRemoteStream(
     }
 }
 
-export function useRemoteStreamReceiver(
-    ws: WebSocket,
+export function useMediaSending(
+    server: SignalServer,
+    conn: RTCPeerConnection,
     stream: MediaStream | null
-) {
-    const [conn] = useState(new RTCPeerConnection())
-
-    const answer = useIncomingSignal(ws)
-
+): { ready: boolean, error: string | null } {
     const [error, setError] = useState<string | null>(null)
 
+    const [answer, setAnswer] = useState<string | null>(null)
+
+    const [ready, setReady] = useState(false)
+
     useEffect(() => {
-        if (!stream) return
+        if (!stream) {
+            console.log("media stream to send not found")
+            setError("media stream to send not found")
+            return
+        }
 
-        stream.getTracks()
-            .forEach((t) => conn.addTrack(t))
+        stream.getTracks().forEach((t) => conn.addTrack(t))
+    }, [server, conn])
 
-        offerTo(conn)
-            .then((o) => sendOffer(ws, o))
-            .catch(setError)
+    useEffect(() => {
+        if (!stream) {
+            console.log("media stream to send not found")
+            setError("media stream to send not found")
+            return
+        }
 
-        return () => conn.close()
-    }, [ws, conn, stream])
+        console.log("sending offer...")
+
+        prepareOffer(conn)
+            .then((o) => server.sendSignal({type: "Offer", sdp: o.sdp}))
+            .catch((e) => setError("can't send offer: " + e.message))
+    }, [server, conn, stream])
+
+    useEffect(() => {
+        const onSignal = (s) => {
+            const data: Signal = JSON.parse(s.data)
+            if(data.type !== "Answer") {
+                setError("Answer expected but got " + JSON.stringify(s))
+                return
+            }
+            setAnswer(data.sdp)
+        }
+
+        server.subscribe(onSignal)
+
+        return () => {
+            server.subscribe(onSignal)
+        }
+    }, [server, conn])
 
     useEffect(() => {
         if (!answer) return
 
-        setAnswerFrom(conn, answer.sdp)
-            .catch(setError)
-
-        return () => conn.close()
-    }, [ws, conn, stream, answer])
-
-    return error
-}
-
-const sendAnswer = (ws: WebSocket, answer: RTCSessionDescriptionInit) => {
-    ws.send(JSON.stringify({ type: "Answer", sdp: answer.sdp}), { binary: false })
-}
-
-const sendOffer = (ws: WebSocket, offer: RTCSessionDescriptionInit) => {
-    ws.send(JSON.stringify({type: "Offer", sdp: offer.sdp}), { binary: false }, (err) => {
-        if(err) {
-            console.log(`can't send offer: ${err}`)
-        }
+        attachAnswer(conn, answer)
+            .then(() => setReady(true))
+            .catch((e) => setError(`error attaching answer: ${e.message}`))
     })
+
+    return { ready, error }
 }
 
-const offerTo = async (conn: RTCPeerConnection) => {
+const prepareOffer = async (conn: RTCPeerConnection) => {
     const offer = await conn.createOffer()
     await conn.setLocalDescription(offer)
     return offer
 }
 
-const answerFor = async (conn: RTCPeerConnection, sdp: string) => {
+const prepareAnswer = async (conn: RTCPeerConnection, sdp: string) => {
     try {
         await conn.setRemoteDescription({ type: "offer", sdp})
         const answer = await conn.createAnswer()
@@ -98,6 +134,6 @@ const answerFor = async (conn: RTCPeerConnection, sdp: string) => {
     }
 }
 
-const setAnswerFrom = async (conn: RTCPeerConnection, sdp: string) => {
+const attachAnswer = async (conn: RTCPeerConnection, sdp: string) => {
     await conn.setRemoteDescription({ type: "answer", sdp})
 }
