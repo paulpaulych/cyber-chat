@@ -2,7 +2,7 @@ import React from "react";
 
 export function Player(props: { stream: MediaStream }) {
     const play = async (video: HTMLVideoElement | null) => {
-        if(!video) return
+        if (!video) return
 
         video.srcObject = props.stream
         await video.play()

@@ -22,7 +22,7 @@ export const SignalServerProvider = (props: {
     useEffect(() => {
         const onClose = () => {
             console.log("connection closed")
-            setWs(new WebSocket(props.url))
+            setWs(connect(props.url))
         }
 
         ws.addEventListener("close", onClose)
@@ -30,14 +30,7 @@ export const SignalServerProvider = (props: {
         return () => {
             ws.removeEventListener("close", onClose)
         }
-    }, [ws])
-
-    useEffect(() => {
-        return () => {
-            console.log("closing connection")
-            ws.close()
-        }
-    }, [props.url])
+    }, [ws, props.url])
 
     const signalServer: SignalServer = {
         sendSignal: (s) => ws.send(JSON.stringify(s)),

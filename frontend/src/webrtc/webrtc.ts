@@ -38,13 +38,20 @@ export function useRemoteMedia(
             .then((a) => server.sendSignal({type: "Answer", sdp: a.sdp}))
             .then(() => setReady(true))
             .catch((e) => setError(`can't send answer: ${e.message}`))
-    }, [server, conn])
+    }, [server, conn, offer])
 
     useEffect(() => {
+        const onTrack = (event) => {
+            console.log("track event received")
+            setStream(event.streams[0])
+        }
+
         if (ready) {
-            conn.addEventListener("track", (event) => {
-                setStream(event.streams[0])
-            })
+            conn.addEventListener("track", onTrack)
+        }
+
+        return () => {
+            conn.removeEventListener("track", onTrack)
         }
     }, [conn, ready])
 
@@ -93,7 +100,9 @@ export function useMediaSending(
         const onSignal = (s) => {
             const data: Signal = JSON.parse(s.data)
             if(data.type !== "Answer") {
-                setError("Answer expected but got " + JSON.stringify(s))
+                const e = "Answer expected but got " + JSON.stringify(s)
+                console.error(e)
+                setError(e)
                 return
             }
             setAnswer(data.sdp)
@@ -109,10 +118,12 @@ export function useMediaSending(
     useEffect(() => {
         if (!answer) return
 
+        console.log("received answer: " + JSON.stringify(answer))
+
         attachAnswer(conn, answer)
             .then(() => setReady(true))
             .catch((e) => setError(`error attaching answer: ${e.message}`))
-    })
+    }, [conn, answer])
 
     return { ready, error }
 }

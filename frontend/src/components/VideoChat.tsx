@@ -56,7 +56,7 @@ function RecvVideo({server}: { server: SignalServer }) {
 
     return (
         <div>
-            <h2>RecevingVideo</h2>
+            <h2>ReceivingVideo</h2>
             {stream && <Player stream={stream}></Player>}
             {error && <h3>ERROR: {error}</h3>}
         </div>
