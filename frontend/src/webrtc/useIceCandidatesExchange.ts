@@ -21,7 +21,7 @@ export function useIceCandidatesExchange(
         const candidate = conn.iceCandidate.value
         server.sendSignal({type: "IceCandidate", candidate: JSON.stringify(candidate)})
         setIceCandidateSent(true)
-    }, [conn.iceCandidate, server.sendSignal])
+    }, [conn, server])
 
     useEffect(function handleRemoteIceCandidate() {
         if (!server.lastSignal) return
@@ -35,7 +35,7 @@ export function useIceCandidatesExchange(
                 console.log(err)
                 setError(err)
             })
-    }, [server.lastSignal, conn.addIceCandidate])
+    }, [server, conn, iceCandidateSent])
 
     return {
         ready: iceCandidateReceived && iceCandidateSent,

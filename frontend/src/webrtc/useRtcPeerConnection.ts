@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from "react";
+import {useEffect, useState} from "react";
 import {err, ok, Res} from "../utils/Res";
 
 const STAN_SERVER = "stun:stun.stunprotocol.org"
@@ -6,7 +6,6 @@ const STAN_SERVER = "stun:stun.stunprotocol.org"
 export type RTCConn = {
     status: RTCConnStatus
     remoteStream: MediaStream | null
-
     iceCandidate: Res<IceCandidate, string> | null
     addIceCandidate: (candidate: IceCandidate) => Promise<void>,
     addStream: (MediaStreamTrack) => void
@@ -18,43 +17,62 @@ export type RTCConn = {
 export type RTCConnStatus = {
     iceConnectionState: RTCIceConnectionState,
     iceGatheringState: RTCIceGathererState,
+    signalingState: RTCSignalingState,
+    connectionState: RTCPeerConnectionState,
+    hasLocalDescription: boolean,
+    hasRemoteDescription: boolean,
     eventLog: string[]
 }
 
 type IceCandidate = RTCIceCandidateInit
 type SDP = string
 
-export function useRtcPeerConnection(): RTCConn {
+export function useRtcPeerConnection(): RTCConn | null {
     const [eventLog, setEventLog] = useState<string[]>([])
 
     const pushEvent = (src: "user" | "conn", s: string) => {
-        setEventLog(prev => prev.concat(`from '${src}': ${s}`))
+        const msg = `from '${src}': ${s}`
+        console.log("conn event: " + msg)
+        setEventLog(prev => prev.concat([msg]))
     }
 
-    const connection = useRef<RTCPeerConnection>((() => {
-        pushEvent("user", "initializing connection")
-        return new RTCPeerConnection({
-            iceServers: [{ urls: STAN_SERVER }]
-        })
-    })())
+    const [conn, setConn] = useState<RTCPeerConnection | null>(null)
 
-    const [iceConnectionState, setIceConnectionState] = useState<RTCIceConnectionState>("new")
-    const [iceGatheringState, setIceGatheringState] = useState<RTCIceGathererState>("new")
+    const [iceConnectionState, setIceConnectionState] = useState<RTCIceConnectionState>()
+    const [iceGatheringState, setIceGatheringState] = useState<RTCIceGathererState>()
+    const [signalingState, setSignalingState] = useState<RTCSignalingState>()
+    const [connectionState, setConnectionState] = useState<RTCPeerConnectionState>()
+
     const [remoteStream, setRemoteStream] = useState<MediaStream>(null)
     const [iceCandidate, setIceCandidate] = useState<Res<IceCandidate, string>>(null)
 
     useEffect(() => {
-        const conn = connection.current
+        if (conn !== null) return
+
+        pushEvent("user", "initializing conn")
+
+        const connection = new RTCPeerConnection({
+            iceServers: [{ urls: STAN_SERVER }]
+        })
+
+        setConn(connection)
 
         const pushConnEvent = (e) => pushEvent("conn", e)
 
-        const onTrack = (e) => {
-            pushConnEvent("track event")
-            setRemoteStream(e.streams[0])
+        const onTrack = (e: RTCTrackEvent) => {
+            const stream = e.streams[0]
+            //TODO: почему то до сюда поток исполнения не доходит
+            pushConnEvent("track event. stream id = " + stream.id)
+
+            pushConnEvent("stream = " + stream.toString())
+            setRemoteStream(stream)
         }
 
         const onIceCandidate = (e: RTCPeerConnectionIceEvent) => {
             pushConnEvent(`IceCandidate event`)
+
+            if (!e.candidate) return
+
             setIceCandidate(ok(e.candidate.toJSON()))
         }
 
@@ -69,52 +87,75 @@ export function useRtcPeerConnection(): RTCConn {
         }
 
         const onIceConnStateChange = () => {
-            pushConnEvent("IceConnectionStateChanged")
-            setIceConnectionState(conn.iceConnectionState)
+            pushConnEvent("IceConnectionStateChanged to " + connection.iceConnectionState)
+            setIceConnectionState(connection.iceConnectionState)
         }
 
         const onIceGatheringStateChange = () => {
-            pushConnEvent("IceGatheringStateChanged")
-            setIceGatheringState(conn.iceGatheringState)
+            pushConnEvent("IceGatheringStateChanged to " + connection.iceGatheringState)
+            setIceGatheringState(connection.iceGatheringState)
         }
 
-        conn.ontrack = onTrack
-        conn.onicecandidate = onIceCandidate
-        conn.onicecandidateerror = onIceCandidateError
-        conn.onnegotiationneeded = onNegotiationNeeded
-        conn.oniceconnectionstatechange = onIceConnStateChange
-        conn.onicegatheringstatechange = onIceGatheringStateChange
-    }, [connection])
+        const onSignalingStateChange = () => {
+            pushConnEvent("SignalingStateChanged to " + connection.signalingState)
+            setSignalingState(connection.signalingState)
+        }
 
-    const addStream = useCallback((stream: MediaStream) => {
-        stream.getTracks().forEach(t => connection.current.addTrack(t))
-    }, [connection])
+        const onConnectionStateChange = () => {
+            pushConnEvent("ConnectionStateChanged to " + connection.connectionState)
+            setConnectionState(connection.connectionState)
+        }
 
-    const prepareOffer = useCallback(async () => {
-        const offer = await connection.current.createOffer()
-        await connection.current.setLocalDescription(offer)
+        connection.ontrack = onTrack
+        connection.onicecandidate = onIceCandidate
+        connection.onicecandidateerror = onIceCandidateError
+        connection.onnegotiationneeded = onNegotiationNeeded
+        connection.oniceconnectionstatechange = onIceConnStateChange
+        connection.onicegatheringstatechange = onIceGatheringStateChange
+        connection.onsignalingstatechange = onSignalingStateChange
+        connection.onconnectionstatechange = onConnectionStateChange
+
+        return () => {
+            connection.close()
+        }
+    }, [])
+
+    if (!conn) return null
+
+    const addStream = (stream: MediaStream) => {
+        stream.getTracks().forEach(t => conn.addTrack(t))
+    }
+
+    const prepareOffer = async () => {
+        const offer = await conn.createOffer()
+        await conn.setLocalDescription(offer)
         return offer.sdp
-    }, [connection])
+    }
 
-    const prepareAnswer = useCallback(async (o) => {
-        await connection.current.setRemoteDescription(o)
-        const answer = await connection.current.createAnswer()
-        await connection.current.setLocalDescription(answer)
+    const prepareAnswer = async (sdp: SDP) => {
+        await conn.setRemoteDescription({ type: "offer", sdp })
+        console.log("CONNECTION STATUS: " + conn.signalingState)
+        const answer = await conn.createAnswer()
+        await conn.setLocalDescription(answer)
         return answer.sdp
-    }, [connection])
+    }
 
-    const attachAnswer = useCallback(async (sdp) => {
-        await connection.current.setRemoteDescription({ type: "answer", sdp})
-    }, [connection])
+    const attachAnswer = async (sdp) => {
+        await conn.setRemoteDescription({ type: "answer", sdp })
+    }
 
-    const addIceCandidate = useCallback(async (c) => {
-        await connection.current.addIceCandidate(c)
-    }, [connection])
+    const addIceCandidate = async (c) => {
+        await conn.addIceCandidate(c)
+    }
 
     return {
         status: {
+            hasLocalDescription: conn.localDescription !== null,
+            hasRemoteDescription: conn.remoteDescription !== null,
             iceConnectionState,
             iceGatheringState,
+            signalingState,
+            connectionState,
             eventLog
         },
         remoteStream,

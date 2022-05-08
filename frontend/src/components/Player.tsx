@@ -1,12 +1,20 @@
-import React from "react";
+import React, {useCallback} from "react";
 
 export function Player(props: { stream: MediaStream }) {
-    const play = async (video: HTMLVideoElement | null) => {
+    const play = (video: HTMLVideoElement | null) => {
         if (!video) return
 
         video.srcObject = props.stream
-        await video.play()
+        video.play()
+            .catch((e) => {
+                console.log("failed to play video: " + e.message)
+            })
     }
 
-    return (<video ref={play}></video>)
+    return (
+        <div>
+            <h3>VIDEO PLAYER</h3>
+            <video ref={play}></video>
+        </div>
+    )
 }

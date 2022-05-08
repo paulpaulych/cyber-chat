@@ -14,8 +14,8 @@ export function SignalServerStatusBar({ server }: { server: SignalServer }) {
     return (
         <div>
             <h3>ServerStatus: {localizeState(server.readyState)}</h3>
-            <h3>Message Log</h3>
-            { messages.map((m, i) => <li key={i}>{i}. {m}</li>) }
+            {/*<h3>Message Log</h3>*/}
+            {/*{ messages.map((m, i) => <li key={i}>{i}. {m}</li>) }*/}
         </div>
     );
 }

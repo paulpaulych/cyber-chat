@@ -34,8 +34,6 @@ export function VideoChat() {
 }
 
 function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
-    console.log(`rendering send video. server: ${JSON.stringify(server)}`)
-
     const localMedia = useContext(LocalMediaContext)
 
     const {ready, error} = useSenderNegotiation(server, conn, localMedia.stream)
@@ -43,7 +41,8 @@ function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
     return (
         <div>
             <h2>SendingVideo</h2>
-            {localMedia.stream && <Player stream={localMedia.stream}></Player>}
+            // TODO: почему-то летит ошибка
+            {/*{localMedia.stream && <Player stream={localMedia.stream}></Player>}*/}
             {localMedia.error && <h3>LOCAL MEDIA ERROR: {localMedia.error}</h3>}
             {ready && <h3>Streaming started...</h3>}
             {error && <h3>ERR: negotiation error: {error}</h3>}
@@ -72,15 +71,19 @@ function Translation(props: { mode: Mode }) {
     return (
         <div>
             <SignalServerStatusBar server={server}/>
-            <PeerConnStatusBar status={conn.status}/>
-            <h3>Video chat. Role = {role}</h3>
-            {server.readyState === ReadyState.OPEN &&
+            { conn &&
                 <div>
-                    {props.mode === Mode.SEND
-                        ?   (<LocalMediaProvider type={"displayMedia"} constraints={{video: true, audio: true}}>
-                        <SendVideo conn={conn} server={server}/>
-                        </LocalMediaProvider>)
-                        :   <RecvVideo conn={conn} server={server}/>
+                    <PeerConnStatusBar status={conn.status}/>
+                    <h3>Video chat. Role = {role}</h3>
+                    {server.readyState === ReadyState.OPEN &&
+                        <div>
+                            {props.mode === Mode.SEND
+                                ?   (<LocalMediaProvider type={"displayMedia"} constraints={{video: true, audio: true}}>
+                                    <SendVideo conn={conn} server={server}/>
+                                </LocalMediaProvider>)
+                                :   <RecvVideo conn={conn} server={server}/>
+                            }
+                        </div>
                     }
                 </div>
             }

@@ -23,6 +23,7 @@ export function useSenderNegotiation(
 
     useEffect(function sendOffer() {
         if (!mediaAttached) return
+        if (sdpExchangeFinished) return
 
         conn.prepareOffer()
             .then((sdp) => {
@@ -30,7 +31,7 @@ export function useSenderNegotiation(
                 setOfferSent(true)
             })
             .catch((e) => setError("can't send offer: " + e.message))
-    }, [server.readyState, server.sendSignal, conn, stream])
+    }, [server, conn, stream, sdpExchangeFinished, mediaAttached])
 
     useEffect(function handleError() {
         if (!server.lastSignal) return
@@ -42,6 +43,7 @@ export function useSenderNegotiation(
 
     useEffect(function handleAnswer() {
         if (!offerSent) return
+        if (sdpExchangeFinished) return
         if (!server.lastSignal) return
         if (server.lastSignal.type !== "Answer") return
 
@@ -52,7 +54,7 @@ export function useSenderNegotiation(
                 console.log(err)
                 setError(err)
             })
-    }, [conn, server.lastSignal])
+    }, [conn, server.lastSignal, offerSent, sdpExchangeFinished])
 
     const iceCandidatesExchange = useIceCandidatesExchange(server, conn)
 
