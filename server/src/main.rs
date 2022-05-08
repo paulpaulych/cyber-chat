@@ -8,7 +8,6 @@ mod webrtc;
 
 use webrtc::api::{SignalSession};
 use webrtc::core::{Role, SignalServer};
-use webrtc::websocket;
 
 async fn index() -> impl Responder {
     NamedFile::open_async("./static/index.html").await.unwrap()

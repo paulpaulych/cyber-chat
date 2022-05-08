@@ -15,6 +15,7 @@ const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 pub struct SignalSession {
     last_hb: Instant,
     role: webrtc::Role,
+    is_active: bool,
     webrtc: Addr<webrtc::SignalServer>,
 }
 
@@ -25,6 +26,7 @@ impl SignalSession {
     ) -> SignalSession {
         SignalSession {
             role,
+            is_active: false,
             last_hb: Instant::now(),
             webrtc
         }
@@ -65,6 +67,7 @@ impl Actor for SignalSession {
             .into_actor(self)
             .then(|res, session, ctx| {
                 res.unwrap_or_else(|e| Ok(session.handle_mailbox_err(e, ctx)))
+                    .map(|_| session.is_active = true)
                     .unwrap_or_else(|already_connected| {
                         send_json(WsOutMessage::from(already_connected), ctx);
                         close_due_duplicate(ctx);
@@ -76,7 +79,9 @@ impl Actor for SignalSession {
     }
 
     fn stopping(&mut self, _: &mut Self::Context) -> Running {
-        self.webrtc.do_send(webrtc::Disconnect { role: self.role.clone() });
+        if self.is_active {
+            self.webrtc.do_send(webrtc::Disconnect { role: self.role.clone() });
+        }
         Running::Stop
     }
 }
