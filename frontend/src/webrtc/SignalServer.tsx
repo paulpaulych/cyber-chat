@@ -1,54 +1,35 @@
-import React, {useEffect, useState} from "react";
-import WebSocket from "isomorphic-ws";
+import React from "react";
+import useWebSocket, {ReadyState} from "react-use-websocket";
 
 export type Signal =
     | { type: "Offer", sdp: string }
     | { type: "Answer", sdp: string }
+    | { type: "IceCandidate", candidate: string }
+
+export type InSignal =
+    | InError
+    | { type: "Offer", sdp: string }
+    | { type: "Answer", sdp: string }
+    | { type: "IceCandidate", candidate: string }
+    | { type: "PeerConnected" }
+    | { type: "PeerDisconnected" }
+
+export type InError = { type: "Error", code: "ALREADY_CONNECTED" | "PEER_NOT_CONNECTED" }
 
 export type SignalServer = {
-    sendSignal: (s: Signal) => void
-    subscribe: (cb: (s: WebSocket.MessageEvent) => void) => void
-    unsubscribe: (cb: (s: WebSocket.MessageEvent) => void) => void
+    lastSignal: InSignal,
+    sendSignal: (s: Signal) => void,
+    readyState: ReadyState
 }
 
-export const SignalServerContext = React.createContext<SignalServer>(null)
+export function useSignalServer(url: string): SignalServer {
+    const ws = useWebSocket(url, {
+        share: true
+    });
 
-export const SignalServerProvider = (props: {
-    url: string,
-    children
-}) => {
-    const [ws, setWs] = useState<WebSocket>(connect(props.url))
-
-    useEffect(() => {
-        const onClose = () => {
-            console.log("connection closed")
-            setWs(connect(props.url))
-        }
-
-        ws.addEventListener("close", onClose)
-
-        return () => {
-            ws.removeEventListener("close", onClose)
-        }
-    }, [ws, props.url])
-
-    const signalServer: SignalServer = {
-        sendSignal: (s) => ws.send(JSON.stringify(s)),
-        subscribe: (listener) => ws.addEventListener("message", listener),
-        unsubscribe: (listener) => ws.removeEventListener("message", listener),
+    return {
+        lastSignal: ws.lastJsonMessage,
+        sendSignal: ws.sendJsonMessage,
+        readyState: ws.readyState
     }
-
-    return (
-        <SignalServerContext.Provider value={signalServer}>
-            {props.children}
-        </SignalServerContext.Provider>
-    )
-}
-
-const connect = (url: string) => {
-    const ws = new WebSocket(url)
-    ws.onopen = () => {
-        console.log("connected")
-    }
-    return ws
 }

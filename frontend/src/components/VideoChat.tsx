@@ -1,9 +1,13 @@
 import React, {useContext, useState} from "react";
-import {SignalServer, SignalServerContext} from "../webrtc/SignalServer";
+import {SignalServer, useSignalServer} from "../webrtc/SignalServer";
 import {LocalMediaContext, LocalMediaProvider} from "./LocalMedia";
-import {useRemoteMedia, useMediaSending} from "../webrtc/webrtc";
 import {Player} from "./Player";
-import {RtcConnContext} from "../webrtc/WebRtcConn";
+import {ReadyState} from "react-use-websocket";
+import {SignalServerStatusBar} from "./SignalServerStatusBar";
+import {RTCConn, useRtcPeerConnection} from "../webrtc/useRtcPeerConnection";
+import {PeerConnStatusBar} from "./PeerConnStatusBar";
+import {useSenderNegotiation} from "../webrtc/useSenderNegotiation";
+import {useReceiverNegotiation} from "../webrtc/useReceiverNegotiation";
 
 enum Mode {
     SEND,
@@ -16,7 +20,6 @@ export function VideoChat() {
 
     return (
         <div>
-            <h3>Connected to signal server</h3>
             {mode === null
                 ?
                 <div>
@@ -30,13 +33,12 @@ export function VideoChat() {
     );
 }
 
-function SendVideo({server}: { server: SignalServer }) {
-    console.log("rendering send video. " + `server: ${JSON.stringify(server)}`)
+function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
+    console.log(`rendering send video. server: ${JSON.stringify(server)}`)
 
     const localMedia = useContext(LocalMediaContext)
-    const conn = useContext(RtcConnContext)
 
-    const {ready, error} = useMediaSending(server, conn, localMedia.stream)
+    const {ready, error} = useSenderNegotiation(server, conn, localMedia.stream)
 
     return (
         <div>
@@ -44,15 +46,13 @@ function SendVideo({server}: { server: SignalServer }) {
             {localMedia.stream && <Player stream={localMedia.stream}></Player>}
             {localMedia.error && <h3>LOCAL MEDIA ERROR: {localMedia.error}</h3>}
             {ready && <h3>Streaming started...</h3>}
-            {error && <h3>WEBRTC ERROR: {error}</h3>}
+            {error && <h3>ERR: negotiation error: {error}</h3>}
         </div>
     );
 }
 
-function RecvVideo({server}: { server: SignalServer }) {
-    const conn = useContext(RtcConnContext)
-
-    const {stream, error} = useRemoteMedia(server, conn)
+function RecvVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
+    const {stream, error} = useReceiverNegotiation(server, conn)
 
     return (
         <div>
@@ -64,20 +64,23 @@ function RecvVideo({server}: { server: SignalServer }) {
 }
 
 function Translation(props: { mode: Mode }) {
+    const role = props.mode === Mode.SEND ? "sender" : "receiver"
+    const url = "ws://localhost:8080/webrtc/room/main/" + role
+    const server = useSignalServer(url)
+    const conn = useRtcPeerConnection()
 
-    const server = useContext(SignalServerContext)
-
-    console.log(`rendering video chat, props=${JSON.stringify(props)}`)
     return (
         <div>
-            <h3>Video chat. Mode = {props.mode}</h3>
-            {server &&
+            <SignalServerStatusBar server={server}/>
+            <PeerConnStatusBar status={conn.status}/>
+            <h3>Video chat. Role = {role}</h3>
+            {server.readyState === ReadyState.OPEN &&
                 <div>
                     {props.mode === Mode.SEND
                         ?   (<LocalMediaProvider type={"displayMedia"} constraints={{video: true, audio: true}}>
-                                <SendVideo server={server}/>
-                            </LocalMediaProvider>)
-                        :   <RecvVideo server={server}/>
+                        <SendVideo conn={conn} server={server}/>
+                        </LocalMediaProvider>)
+                        :   <RecvVideo conn={conn} server={server}/>
                     }
                 </div>
             }

@@ -116,7 +116,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for SignalSession {
                 log::debug!("received message from {:?}: {}", self.role, text);
 
                 let msg: WsInMessage = serde_json::from_str(&text).unwrap();
-                let signal_req = webrtc::SignalReq::from(msg);
+                let signal_req = webrtc::SignalReq {
+                    from: self.role.clone(),
+                    data: webrtc::SignalReqData::from(msg)
+                };
 
                 self.webrtc.send(signal_req)
                     .into_actor(self)
@@ -150,6 +153,7 @@ const PEER_NOT_CONNECTED: &str = "PEER_NOT_CONNECTED";
 enum WsInMessage {
     Offer { sdp: String },
     Answer { sdp: String },
+    IceCandidate { candidate: String },
 }
 
 #[derive(Serialize)]
@@ -157,16 +161,18 @@ enum WsInMessage {
 enum WsOutMessage {
     Offer { sdp: String },
     Answer { sdp: String },
+    IceCandidate { candidate: String },
     Error { code: String },
     PeerConnected,
     PeerDisconnected
 }
 
-impl From<WsInMessage> for webrtc::SignalReq {
+impl From<WsInMessage> for webrtc::SignalReqData {
     fn from(msg: WsInMessage) -> Self {
         match msg {
-            WsInMessage::Offer { sdp } => webrtc::SignalReq::Offer { sdp },
-            WsInMessage::Answer { sdp } => webrtc::SignalReq::Answer { sdp },
+            WsInMessage::Offer { sdp } => webrtc::SignalReqData::Offer { sdp },
+            WsInMessage::Answer { sdp } => webrtc::SignalReqData::Answer { sdp },
+            WsInMessage::IceCandidate { candidate } => webrtc::SignalReqData::IceCandidate { candidate }
         }
     }
 }
@@ -189,7 +195,8 @@ impl From<webrtc::Signal> for WsOutMessage {
             webrtc::Signal::Offer { sdp } => WsOutMessage::Offer { sdp },
             webrtc::Signal::Answer { sdp } => WsOutMessage::Answer { sdp },
             webrtc::Signal::PeerConnected => WsOutMessage::PeerConnected,
-            webrtc::Signal::PeerDisconnected => WsOutMessage::PeerDisconnected
+            webrtc::Signal::PeerDisconnected => WsOutMessage::PeerDisconnected,
+            webrtc::Signal::IceCandidate { candidate } => WsOutMessage::IceCandidate { candidate }
         }
     }
 }

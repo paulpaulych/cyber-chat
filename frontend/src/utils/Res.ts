@@ -58,3 +58,7 @@ export function errOrNull<T, E>(r: Res<T, E>): E | null {
 export function okOrNull<T, E>(r: Res<T, E>): T | null {
     return  r._kind === "OK" ? r.value : null
 }
+
+export function isOk<T, E>(r: Res<T, E>): r is { _kind: "OK", value: T } {
+    return r._kind === "OK"
+}
