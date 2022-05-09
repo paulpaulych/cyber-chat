@@ -1,13 +1,13 @@
 import React, {useState} from "react";
-import {SignalServer, useSignalServer} from "../webrtc/SignalServer";
-import {useLocalMedia} from "./LocalMedia";
+import {UseSignalServer, useSignalServer} from "../core/webrtc/useSignalServer";
+import {useLocalMedia} from "../core/useLocalMedia";
 import {Player} from "./Player";
 import {ReadyState} from "react-use-websocket";
 import {SignalServerStatusBar} from "./SignalServerStatusBar";
-import {RTCConn, useRtcPeerConnection} from "../webrtc/useRtcPeerConnection";
+import {RTCConn, useRtcPeerConnection} from "../core/webrtc/useRtcPeerConnection";
 import {PeerConnStatusBar} from "./PeerConnStatusBar";
-import {useSenderNegotiation} from "../webrtc/useSenderNegotiation";
-import {useReceiverNegotiation} from "../webrtc/useReceiverNegotiation";
+import {useSenderNegotiation} from "../core/webrtc/useSenderNegotiation";
+import {useReceiverNegotiation} from "../core/webrtc/useReceiverNegotiation";
 
 enum Mode {
     SEND,
@@ -33,7 +33,7 @@ export function VideoChat() {
     );
 }
 
-function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
+function SendVideo({server, conn}: { conn: RTCConn, server: UseSignalServer }) {
     const constraints = {
         video: { width: 640, height: 480 },
         audio: true
@@ -46,8 +46,6 @@ function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
     return (
         <div>
             <h2>SendingVideo</h2>
-            // TODO: почему-то летит ошибка
-            {/*{localMedia.stream && <Player stream={localMedia.stream}></Player>}*/}
             {localMedia.error && <h3>LOCAL MEDIA ERROR: {localMedia.error}</h3>}
             {ready && <h3>Streaming started...</h3>}
             {error && <h3>ERR: negotiation error: {error}</h3>}
@@ -55,7 +53,7 @@ function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
     );
 }
 
-function RecvVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
+function RecvVideo({server, conn}: { conn: RTCConn, server: UseSignalServer }) {
     const {stream, error} = useReceiverNegotiation(server, conn)
 
     return (

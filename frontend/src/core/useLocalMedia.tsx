@@ -1,8 +1,8 @@
-import React, {useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {ok, err, Res, okOrNull, errOrNull, onOk} from "../utils/Res";
 import {mapNullable} from "../utils/func";
 
-export type LocalMedia = {
+export type UseLocalMedia = {
     stream: MediaStream | null,
     error: string | null
 }
@@ -10,7 +10,7 @@ export type LocalMedia = {
 export function useLocalMedia(props: {
     type: "userMedia" | "displayMedia"
     constraints: MediaStreamConstraints | undefined
-}): LocalMedia {
+}): UseLocalMedia {
     const [streamRes, setStreamRes] = useState<Res<MediaStream, string> | null>(null);
 
     useEffect(() => {

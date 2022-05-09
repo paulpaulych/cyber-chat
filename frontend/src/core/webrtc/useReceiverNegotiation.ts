@@ -1,11 +1,11 @@
-import {SignalServer} from "./SignalServer";
+import {UseSignalServer} from "./useSignalServer";
 import {useEffect, useState} from "react";
 import {RTCConn} from "./useRtcPeerConnection";
 import {useIceCandidatesExchange} from "./useIceCandidatesExchange";
 
 
 export function useReceiverNegotiation(
-    server: SignalServer,
+    server: UseSignalServer,
     conn: RTCConn,
 ): { stream: MediaStream | null, error: string | null } {
 

@@ -1,21 +1,11 @@
-import {SignalServer} from "../webrtc/SignalServer";
-import React, {useEffect, useState} from "react";
+import {UseSignalServer} from "../core/webrtc/useSignalServer";
+import React from "react";
 import {ReadyState} from "react-use-websocket";
 
-export function SignalServerStatusBar({ server }: { server: SignalServer }) {
-    const [messages, setMessages] = useState<string[]>([])
-
-    useEffect(() => {
-        if (!server.lastSignal) return
-
-        setMessages((prev) => prev.concat([JSON.stringify(server.lastSignal)]))
-    }, [server.lastSignal])
-
+export function SignalServerStatusBar({ server }: { server: UseSignalServer }) {
     return (
         <div>
             <h3>ServerStatus: {localizeState(server.readyState)}</h3>
-            {/*<h3>Message Log</h3>*/}
-            {/*{ messages.map((m, i) => <li key={i}>{i}. {m}</li>) }*/}
         </div>
     );
 }

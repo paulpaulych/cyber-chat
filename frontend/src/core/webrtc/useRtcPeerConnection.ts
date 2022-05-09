@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {err, ok, Res} from "../utils/Res";
+import {err, ok, Res} from "../../utils/Res";
 
 const STAN_SERVER = "stun:stun.stunprotocol.org"
 
