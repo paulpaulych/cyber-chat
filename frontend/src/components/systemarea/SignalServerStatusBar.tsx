@@ -1,4 +1,4 @@
-import {SignalServer} from "../core/webrtc/useSignalServer";
+import {SignalServer} from "../../core/webrtc/useSignalServer";
 import React from "react";
 import {ReadyState} from "react-use-websocket";
 

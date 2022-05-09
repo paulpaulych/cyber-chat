@@ -1,16 +1,36 @@
 import {SignalServer} from "./useSignalServer";
-import {useEffect, useState} from "react";
 import {RTCConn} from "./useRtcPeerConnection";
 import {useIceCandidatesExchange} from "./useIceCandidatesExchange";
+import {useEffect, useState} from "react";
 
+type ReceiverNegotiation = {
+    ready: boolean
+    stream: MediaStream | null
+    error: string | null
+}
 
 export function useReceiverNegotiation(
     server: SignalServer,
     conn: RTCConn,
-): { stream: MediaStream | null, error: string | null } {
+): ReceiverNegotiation {
+
+    const sdpExchange = useReceiverSdpExchange(server, conn)
+    const iceCandidateExchange = useIceCandidatesExchange(server, conn, sdpExchange.ready)
+
+    return {
+        ready: sdpExchange.ready && iceCandidateExchange.ready,
+        stream: conn.remoteStream,
+        error: sdpExchange.error ?? iceCandidateExchange.error
+    }
+}
+
+function useReceiverSdpExchange(
+    server: SignalServer,
+    conn: RTCConn,
+): { ready: boolean, error: string | null } {
 
     const [offerReceived, setOfferReceived] = useState(false)
-    const [sdpExchangeFinished, setSdpExchangeFinished] = useState(false)
+    const [ready, setReady] = useState(false)
     const [error, setError] = useState<string>()
 
     useEffect(function handleError() {
@@ -23,7 +43,7 @@ export function useReceiverNegotiation(
 
     useEffect(function handleOffer() {
         if (offerReceived) return
-        if (sdpExchangeFinished) return
+        if (ready) return
         if (!server.lastSignal) return
         if (server.lastSignal.type !== "Offer") return
 
@@ -32,20 +52,14 @@ export function useReceiverNegotiation(
         conn.prepareAnswer(server.lastSignal.sdp)
             .then((sdp) => {
                 server.sendSignal({type: "Answer", sdp})
-                setSdpExchangeFinished(true)
+                setReady(true)
             })
             .catch((e) => {
                 const err = `error answering on offer : ${e.message}`
                 console.log(err)
                 setError(err)
             })
-    }, [conn, server, sdpExchangeFinished, offerReceived])
+    }, [conn, server, ready, offerReceived])
 
-    const iceCandidateExchange = useIceCandidatesExchange(server, conn)
-
-    return {
-        stream: conn.remoteStream,
-        error: error || iceCandidateExchange.error
-    }
+    return { ready, error }
 }
-

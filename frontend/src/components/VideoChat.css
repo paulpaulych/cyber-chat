@@ -1,0 +1,12 @@
+.Chat {
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.ChatUserArea {
+    flex: 2;
+}
+
+.ChatSystemArea {
+    flex: 1
+}

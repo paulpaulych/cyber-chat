@@ -1,93 +1,33 @@
-import React, {useState} from "react";
-import {SignalServer, useSignalServer} from "../core/webrtc/useSignalServer";
-import {useLocalMedia} from "../core/useLocalMedia";
-import {Player} from "./Player";
-import {ReadyState} from "react-use-websocket";
-import {SignalServerStatusBar} from "./SignalServerStatusBar";
-import {RTCConn, useRtcPeerConnection} from "../core/webrtc/useRtcPeerConnection";
-import {PeerConnStatusBar} from "./PeerConnStatusBar";
-import {useSenderNegotiation} from "../core/webrtc/useSenderNegotiation";
-import {useReceiverNegotiation} from "../core/webrtc/useReceiverNegotiation";
+import {SystemLog} from "./systemarea/SystemLog";
+import {VideoTranslation} from "./userarea/VideoTranslation";
+import {Terminal} from "./userarea/terminal/Terminal";
+import {useSignalServer} from "../core/webrtc/useSignalServer";
+import {useRtcPeerConnection} from "../core/webrtc/useRtcPeerConnection";
 
-enum Mode {
-    SEND,
-    RECV
-}
+export type Mode = "send" | "recv"
 
-export function VideoChat() {
-
-    const [mode, setMode] = useState<Mode | null>(null)
-
-    return (
-        <div>
-            {mode === null
-                ?
-                <div>
-                    <label>CHOOSE YOUR MODE</label>
-                    <button onClick={() => setMode(Mode.SEND)}>SEND</button>
-                    <button onClick={() => setMode(Mode.RECV)}>RECV</button>
-                </div>
-                : <Translation mode={mode}/>
-            }
-        </div>
-    );
-}
-
-function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
-    const constraints = {
-        video: { width: 640, height: 480 },
-        audio: true
-    }
-
-    const localMedia = useLocalMedia ({ type: "displayMedia", constraints})
-
-    const {ready, error} = useSenderNegotiation(server, conn, localMedia.stream)
-
-    return (
-        <div>
-            <h2>SendingVideo</h2>
-            {localMedia.error && <h3>LOCAL MEDIA ERROR: {localMedia.error}</h3>}
-            {ready && <h3>Streaming started...</h3>}
-            {error && <h3>ERR: negotiation error: {error}</h3>}
-        </div>
-    );
-}
-
-function RecvVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
-    const {stream, error} = useReceiverNegotiation(server, conn)
-
-    return (
-        <div>
-            <h2>ReceivingVideo</h2>
-            {stream && <Player stream={stream}></Player>}
-            {error && <h3>ERROR: {error}</h3>}
-        </div>
-    )
-}
-
-function Translation(props: { mode: Mode }) {
-    const role = props.mode === Mode.SEND ? "sender" : "receiver"
+export function VideoChat(props: { mode: Mode }) {
+    const role = props.mode === "send" ? "sender" : "receiver"
     const url = "ws://localhost:8080/webrtc/room/main/" + role
     const server = useSignalServer(url)
     const conn = useRtcPeerConnection()
 
+    const Loading = () => <h1>Loading...</h1>
+
     return (
-        <div>
-            <SignalServerStatusBar server={server}/>
-            { conn &&
-                <div>
-                    <PeerConnStatusBar status={conn.status}/>
-                    <h3>Video chat. Role = {role}</h3>
-                    {server.readyState === ReadyState.OPEN &&
-                        <div>
-                            {props.mode === Mode.SEND
-                                ?   <SendVideo conn={conn} server={server}/>
-                                :   <RecvVideo conn={conn} server={server}/>
-                            }
-                        </div>
-                    }
+        <>
+        {conn &&
+            <div className="Chat border-wh-5">
+                <div className="ChatUserArea border-wh-5">
+                    <VideoTranslation mode={props.mode} server={server} conn={conn}/>
+                    <Terminal/>
                 </div>
-            }
-        </div>
+                <div className="ChatSystemArea border-wh-5">
+                    <SystemLog connStatus={conn.status} signalServer={server}/>
+                </div>
+            </div>
+        }
+        {!conn && <Loading/>}
+        </>
     )
 }

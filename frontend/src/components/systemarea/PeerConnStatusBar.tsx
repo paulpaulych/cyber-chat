@@ -1,4 +1,4 @@
-import {RTCConnStatus} from "../core/webrtc/useRtcPeerConnection";
+import {RTCConnStatus} from "../../core/webrtc/useRtcPeerConnection";
 
 export function PeerConnStatusBar({ status }: { status: RTCConnStatus }) {
     return (

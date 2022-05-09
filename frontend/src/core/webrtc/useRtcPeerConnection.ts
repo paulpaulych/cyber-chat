@@ -125,11 +125,14 @@ export function useRtcPeerConnection(): RTCConn | null {
 
     const addStream = (stream: MediaStream) => {
         stream.getTracks().forEach(t => conn.addTrack(t, stream))
+        pushEvent("user", "tracks added")
     }
 
     const prepareOffer = async () => {
         const offer = await conn.createOffer()
+        pushEvent("user", "offer created")
         await conn.setLocalDescription(offer)
+        pushEvent("user", "local description set")
         return offer.sdp
     }
 
@@ -137,16 +140,20 @@ export function useRtcPeerConnection(): RTCConn | null {
         await conn.setRemoteDescription({ type: "offer", sdp })
         console.log("CONNECTION STATUS: " + conn.signalingState)
         const answer = await conn.createAnswer()
+        pushEvent("user", "answer created")
         await conn.setLocalDescription(answer)
+        pushEvent("user", "local description set")
         return answer.sdp
     }
 
     const attachAnswer = async (sdp) => {
         await conn.setRemoteDescription({ type: "answer", sdp })
+        pushEvent("user", "remote answer set")
     }
 
     const addIceCandidate = async (c) => {
         await conn.addIceCandidate(c)
+        pushEvent("user", "ice candidate added")
     }
 
     return {
