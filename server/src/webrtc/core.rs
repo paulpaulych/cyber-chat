@@ -5,6 +5,7 @@ pub enum Signal {
     Offer { sdp: String },
     Answer { sdp: String },
     IceCandidate { candidate: String },
+    IceGatheringComplete,
     PeerConnected,
     PeerDisconnected
 }
@@ -15,13 +16,6 @@ impl Message for Signal {
 pub struct AlreadyConnected;
 pub struct PeerNotConnected;
 
-
-pub enum SignalReqData {
-    Offer { sdp: String },
-    Answer { sdp: String },
-    IceCandidate { candidate: String },
-}
-
 pub struct SignalReq {
     pub from: Role,
     pub data: SignalReqData 
@@ -29,6 +23,14 @@ pub struct SignalReq {
 impl Message for SignalReq {
     type Result = Result<(), PeerNotConnected>;
 }
+
+pub enum SignalReqData {
+    Offer { sdp: String },
+    Answer { sdp: String },
+    IceCandidate { candidate: String },
+    IceGatheringComplete,
+}
+
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -139,6 +141,7 @@ fn to_signal(req: SignalReqData) -> Signal {
     match req {
         SignalReqData::Offer { sdp } => Signal::Offer { sdp },
         SignalReqData::Answer { sdp  } => Signal::Answer { sdp },
-        SignalReqData::IceCandidate { candidate } => Signal::IceCandidate { candidate }
+        SignalReqData::IceCandidate { candidate } => Signal::IceCandidate { candidate },
+        SignalReqData::IceGatheringComplete => Signal::IceGatheringComplete
     }
 }

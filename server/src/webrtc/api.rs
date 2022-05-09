@@ -154,6 +154,7 @@ enum WsInMessage {
     Offer { sdp: String },
     Answer { sdp: String },
     IceCandidate { candidate: String },
+    IceGatheringComplete,
 }
 
 #[derive(Serialize)]
@@ -162,6 +163,7 @@ enum WsOutMessage {
     Offer { sdp: String },
     Answer { sdp: String },
     IceCandidate { candidate: String },
+    IceGatheringComplete,
     Error { code: String },
     PeerConnected,
     PeerDisconnected
@@ -172,7 +174,8 @@ impl From<WsInMessage> for webrtc::SignalReqData {
         match msg {
             WsInMessage::Offer { sdp } => webrtc::SignalReqData::Offer { sdp },
             WsInMessage::Answer { sdp } => webrtc::SignalReqData::Answer { sdp },
-            WsInMessage::IceCandidate { candidate } => webrtc::SignalReqData::IceCandidate { candidate }
+            WsInMessage::IceCandidate { candidate } => webrtc::SignalReqData::IceCandidate { candidate },
+            WsInMessage::IceGatheringComplete => webrtc::SignalReqData::IceGatheringComplete
         }
     }
 }
@@ -196,7 +199,8 @@ impl From<webrtc::Signal> for WsOutMessage {
             webrtc::Signal::Answer { sdp } => WsOutMessage::Answer { sdp },
             webrtc::Signal::PeerConnected => WsOutMessage::PeerConnected,
             webrtc::Signal::PeerDisconnected => WsOutMessage::PeerDisconnected,
-            webrtc::Signal::IceCandidate { candidate } => WsOutMessage::IceCandidate { candidate }
+            webrtc::Signal::IceCandidate { candidate } => WsOutMessage::IceCandidate { candidate },
+            webrtc::Signal::IceGatheringComplete => WsOutMessage::IceGatheringComplete
         }
     }
 }

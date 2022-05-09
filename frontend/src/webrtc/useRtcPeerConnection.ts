@@ -60,12 +60,13 @@ export function useRtcPeerConnection(): RTCConn | null {
         const pushConnEvent = (e) => pushEvent("conn", e)
 
         const onTrack = (e: RTCTrackEvent) => {
-            const stream = e.streams[0]
-            //TODO: почему то до сюда поток исполнения не доходит
-            pushConnEvent("track event. stream id = " + stream.id)
+            if (e.streams.length === 0) {
+                pushConnEvent("track event with no streams")
+                return
+            }
 
-            pushConnEvent("stream = " + stream.toString())
-            setRemoteStream(stream)
+            pushConnEvent(`track event with ${e.streams.length} streams`)
+            setRemoteStream(e.streams[0])
         }
 
         const onIceCandidate = (e: RTCPeerConnectionIceEvent) => {
@@ -123,7 +124,7 @@ export function useRtcPeerConnection(): RTCConn | null {
     if (!conn) return null
 
     const addStream = (stream: MediaStream) => {
-        stream.getTracks().forEach(t => conn.addTrack(t))
+        stream.getTracks().forEach(t => conn.addTrack(t, stream))
     }
 
     const prepareOffer = async () => {

@@ -1,6 +1,6 @@
-import React, {useContext, useState} from "react";
+import React, {useState} from "react";
 import {SignalServer, useSignalServer} from "../webrtc/SignalServer";
-import {LocalMediaContext, LocalMediaProvider} from "./LocalMedia";
+import {useLocalMedia} from "./LocalMedia";
 import {Player} from "./Player";
 import {ReadyState} from "react-use-websocket";
 import {SignalServerStatusBar} from "./SignalServerStatusBar";
@@ -34,7 +34,12 @@ export function VideoChat() {
 }
 
 function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
-    const localMedia = useContext(LocalMediaContext)
+    const constraints = {
+        video: { width: 640, height: 480 },
+        audio: true
+    }
+
+    const localMedia = useLocalMedia ({ type: "displayMedia", constraints})
 
     const {ready, error} = useSenderNegotiation(server, conn, localMedia.stream)
 
@@ -78,9 +83,7 @@ function Translation(props: { mode: Mode }) {
                     {server.readyState === ReadyState.OPEN &&
                         <div>
                             {props.mode === Mode.SEND
-                                ?   (<LocalMediaProvider type={"displayMedia"} constraints={{video: true, audio: true}}>
-                                    <SendVideo conn={conn} server={server}/>
-                                </LocalMediaProvider>)
+                                ?   <SendVideo conn={conn} server={server}/>
                                 :   <RecvVideo conn={conn} server={server}/>
                             }
                         </div>

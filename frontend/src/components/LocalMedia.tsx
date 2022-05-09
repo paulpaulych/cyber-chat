@@ -7,23 +7,7 @@ export type LocalMedia = {
     error: string | null
 }
 
-export const LocalMediaContext = React.createContext<LocalMedia>(null)
-
-export function LocalMediaProvider(props: {
-    type: "userMedia" | "displayMedia",
-    constraints: MediaStreamConstraints | undefined,
-    children
-}) {
-    const media = useLocalMedia(props)
-
-    return (
-        <LocalMediaContext.Provider value={media}>
-            {props.children}
-        </LocalMediaContext.Provider>
-    )
-}
-
-function useLocalMedia(props: {
+export function useLocalMedia(props: {
     type: "userMedia" | "displayMedia"
     constraints: MediaStreamConstraints | undefined
 }): LocalMedia {

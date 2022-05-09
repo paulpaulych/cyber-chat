@@ -7,11 +7,14 @@ export function useIceCandidatesExchange(
     server: SignalServer,
     conn: RTCConn
 ): { ready, error } {
-    const [iceCandidateReceived, setIceCandidateReceived] = useState(false)
-    const [iceCandidateSent, setIceCandidateSent] = useState(false)
     const [error, setError] = useState<string>()
 
+    const localGatheringComplete = conn.status.iceGatheringState === "complete"
+    const [remoteGatheringComplete, setRemoteGatheringComplete] = useState(false)
+
     useEffect(function handleLocalIceCandidate() {
+        if (localGatheringComplete) return
+
         if (!conn.iceCandidate) return
         if (!isOk(conn.iceCandidate)) {
             setError(conn.iceCandidate.value)
@@ -20,25 +23,40 @@ export function useIceCandidatesExchange(
 
         const candidate = conn.iceCandidate.value
         server.sendSignal({type: "IceCandidate", candidate: JSON.stringify(candidate)})
-        setIceCandidateSent(true)
-    }, [conn, server])
+    }, [conn, server, localGatheringComplete])
 
     useEffect(function handleRemoteIceCandidate() {
+        if (remoteGatheringComplete) return
         if (!server.lastSignal) return
         if (server.lastSignal.type !== "IceCandidate") return
 
         const candidate = JSON.parse(server.lastSignal.candidate)
         conn.addIceCandidate(candidate)
-            .then(() => setIceCandidateReceived(true))
+            .then(() => setRemoteGatheringComplete(true))
             .catch((e) => {
                 const err = `error adding ice candidate: ${e.message}`
                 console.log(err)
                 setError(err)
             })
-    }, [server, conn, iceCandidateSent])
+    }, [server, conn, remoteGatheringComplete])
+
+
+    useEffect(function notifyOnGatheringComplete() {
+        if (localGatheringComplete) return
+
+        server.sendSignal({type: "IceGatheringComplete"})
+    }, [server.sendSignal, localGatheringComplete])
+
+    useEffect(function handleRemoteGatheringComplete() {
+        if (remoteGatheringComplete) return
+        if (!server.lastSignal) return
+        if (server.lastSignal.type !== "IceGatheringComplete") return
+
+        setRemoteGatheringComplete(true)
+    }, [remoteGatheringComplete, server.lastSignal])
 
     return {
-        ready: iceCandidateReceived && iceCandidateSent,
+        ready: remoteGatheringComplete && localGatheringComplete,
         error
     }
 }

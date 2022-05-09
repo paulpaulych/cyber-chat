@@ -5,12 +5,14 @@ export type Signal =
     | { type: "Offer", sdp: string }
     | { type: "Answer", sdp: string }
     | { type: "IceCandidate", candidate: string }
+    | { type: "IceGatheringComplete" }
 
 export type InSignal =
     | InError
     | { type: "Offer", sdp: string }
     | { type: "Answer", sdp: string }
     | { type: "IceCandidate", candidate: string }
+    | { type: "IceGatheringComplete" }
     | { type: "PeerConnected" }
     | { type: "PeerDisconnected" }
 

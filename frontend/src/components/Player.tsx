@@ -1,4 +1,4 @@
-import React, {useCallback} from "react";
+import React from "react";
 
 export function Player(props: { stream: MediaStream }) {
     const play = (video: HTMLVideoElement | null) => {
