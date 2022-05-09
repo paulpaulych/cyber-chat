@@ -1,10 +1,10 @@
-import {UseSignalServer} from "./useSignalServer";
+import {SignalServer} from "./useSignalServer";
 import {RTCConn} from "./useRtcPeerConnection";
 import {useEffect, useState} from "react";
 import {isOk} from "../../utils/Res";
 
 export function useIceCandidatesExchange(
-    server: UseSignalServer,
+    server: SignalServer,
     conn: RTCConn
 ): { ready, error } {
     const [error, setError] = useState<string>()
@@ -38,14 +38,14 @@ export function useIceCandidatesExchange(
                 console.log(err)
                 setError(err)
             })
-    }, [server, conn, remoteGatheringComplete])
+    }, [server.lastSignal, conn, remoteGatheringComplete])
 
 
     useEffect(function notifyOnGatheringComplete() {
         if (localGatheringComplete) return
 
         server.sendSignal({type: "IceGatheringComplete"})
-    }, [server, localGatheringComplete])
+    }, [server.sendSignal, localGatheringComplete])
 
     useEffect(function handleRemoteGatheringComplete() {
         if (remoteGatheringComplete) return

@@ -17,13 +17,13 @@ export type InSignal =
 
 export type InError = { type: "Error", code: "ALREADY_CONNECTED" | "PEER_NOT_CONNECTED" }
 
-export type UseSignalServer = {
+export type SignalServer = {
     lastSignal: InSignal,
     sendSignal: (s: Signal) => void,
     readyState: ReadyState
 }
 
-export function useSignalServer(url: string): UseSignalServer {
+export function useSignalServer(url: string): SignalServer {
     const ws = useWebSocket(url, {
         share: true
     });

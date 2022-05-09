@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {UseSignalServer, useSignalServer} from "../core/webrtc/useSignalServer";
+import {SignalServer, useSignalServer} from "../core/webrtc/useSignalServer";
 import {useLocalMedia} from "../core/useLocalMedia";
 import {Player} from "./Player";
 import {ReadyState} from "react-use-websocket";
@@ -33,7 +33,7 @@ export function VideoChat() {
     );
 }
 
-function SendVideo({server, conn}: { conn: RTCConn, server: UseSignalServer }) {
+function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
     const constraints = {
         video: { width: 640, height: 480 },
         audio: true
@@ -53,7 +53,7 @@ function SendVideo({server, conn}: { conn: RTCConn, server: UseSignalServer }) {
     );
 }
 
-function RecvVideo({server, conn}: { conn: RTCConn, server: UseSignalServer }) {
+function RecvVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
     const {stream, error} = useReceiverNegotiation(server, conn)
 
     return (
