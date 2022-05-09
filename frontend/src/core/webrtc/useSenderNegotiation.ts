@@ -44,6 +44,7 @@ function useSenderSdpExchange(
         setMediaAttached(true)
     }, [stream, conn, mediaAttached])
 
+    //TODO: offer is creating multiple times
     useEffect(function sendOffer() {
         if (!mediaAttached) return
         if (ready) return

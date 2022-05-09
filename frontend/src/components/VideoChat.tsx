@@ -3,6 +3,8 @@ import {VideoTranslation} from "./userarea/VideoTranslation";
 import {Terminal} from "./userarea/terminal/Terminal";
 import {useSignalServer} from "../core/webrtc/useSignalServer";
 import {useRtcPeerConnection} from "../core/webrtc/useRtcPeerConnection";
+import "./VideoChat.css"
+import {UserArea} from "./userarea/UserArea";
 
 export type Mode = "send" | "recv"
 
@@ -17,12 +19,11 @@ export function VideoChat(props: { mode: Mode }) {
     return (
         <>
         {conn &&
-            <div className="Chat border-wh-5">
-                <div className="ChatUserArea border-wh-5">
-                    <VideoTranslation mode={props.mode} server={server} conn={conn}/>
-                    <Terminal/>
+            <div className="Chat">
+                <div className="ChatUserArea">
+                    <UserArea mode={props.mode} server={server} conn={conn}/>
                 </div>
-                <div className="ChatSystemArea border-wh-5">
+                <div className="ChatSystemArea">
                     <SystemLog connStatus={conn.status} signalServer={server}/>
                 </div>
             </div>

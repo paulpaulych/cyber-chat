@@ -1,0 +1,15 @@
+.UserArea {
+    display: flex;
+    flex-flow: column nowrap;
+    flex-shrink: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.UserAreaVideo {
+    flex: 3;
+}
+
+.UserAreaTerminal {
+    flex: 2;
+}

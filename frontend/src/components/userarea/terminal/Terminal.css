@@ -1,0 +1,30 @@
+.Terminal {
+    color: rgb(255, 0, 206);
+    font-family: monospace;
+    font-size: x-large;
+    border: 1px solid rgb(255, 0, 206);
+    padding: 5px;
+    overflow-y: scroll;
+    width: 100%;
+    height: 100%;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.UserInput {
+
+}
+
+.Msg {
+    color: aqua;
+}
+
+.CmdPrelude {
+    font-weight: bold;
+}
+
+.MsgFromRoot {
+    color: rgb(0, 139, 139);
+}

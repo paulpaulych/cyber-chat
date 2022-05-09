@@ -24,27 +24,6 @@
   color: aqua;
 }
 
-.console {
-  color: rgb(255, 0, 206);
-  border: 1px solid rgb(255, 0, 206);
-  font-family: monospace;
-  font-size: x-large;
-  padding: 5px;
-  overflow-y: scroll;
-}
-
 .bold {
   font-weight: bold;
-}
-
-.msg {
-  color: aqua;
-}
-
-.cmd-prelude {
-  font-weight: bold;
-}
-
-.msg-from-root {
-  color: rgb(0, 139, 139);
 }

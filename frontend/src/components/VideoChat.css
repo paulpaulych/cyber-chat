@@ -1,6 +1,8 @@
 .Chat {
     display: flex;
     flex-flow: row nowrap;
+    height: 100%;
+    width: 100%;
 }
 
 .ChatUserArea {
@@ -8,5 +10,6 @@
 }
 
 .ChatSystemArea {
-    flex: 1
+    flex: 1;
+    border: 2px solid white;
 }
