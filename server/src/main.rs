@@ -4,6 +4,7 @@ use actix_web::{middleware::Logger, web, App, Error, HttpRequest, HttpResponse, 
 use actix_web::http::StatusCode;
 use actix_web_actors::ws;
 
+mod domain;
 mod webrtc;
 
 use webrtc::api::{SignalSession};
