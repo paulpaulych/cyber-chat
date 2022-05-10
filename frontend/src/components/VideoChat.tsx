@@ -1,6 +1,4 @@
 import {SystemLog} from "./systemarea/SystemLog";
-import {VideoTranslation} from "./userarea/VideoTranslation";
-import {Terminal} from "./userarea/terminal/Terminal";
 import {useSignalServer} from "../core/webrtc/useSignalServer";
 import {useRtcPeerConnection} from "../core/webrtc/useRtcPeerConnection";
 import "./VideoChat.css"

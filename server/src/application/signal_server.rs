@@ -18,7 +18,7 @@ pub struct PeerNotConnected;
 
 pub struct SignalReq {
     pub from: Role,
-    pub data: SignalReqData 
+    pub data: SignalReqData
 }
 impl Message for SignalReq {
     type Result = Result<(), PeerNotConnected>;
