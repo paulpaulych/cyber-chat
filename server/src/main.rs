@@ -10,6 +10,7 @@ use infra::routes::webrtc::{webrtc_sender_route, webrtc_receiver_route};
 
 use crate::application::signal_server::SignalServer;
 use crate::infra::config::Config;
+use crate::infra::routes::login::login_route;
 use crate::infra::routes::ui::ui_routes;
 
 #[actix_web::main]
@@ -28,6 +29,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(server.clone()))
 
             .configure(ui_routes)
+            .configure(login_route)
+
             .route("/webrtc/room/{room_id}/sender",
                    web::get().to(webrtc_sender_route))
             .route("/webrtc/room/{room_id}/receiver",

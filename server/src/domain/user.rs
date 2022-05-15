@@ -9,7 +9,7 @@ impl UserId {
     }
 }
 
-struct User {
+pub struct User {
     id: UserId,
     name: Option<String>,
     wks_id: WksId,

@@ -1,5 +1,4 @@
-use actix_web::{HttpRequest, web};
-use std::time::{Duration, Instant};
+use actix_web::{web};
 use actix_files::NamedFile;
 use actix_web::web::ServiceConfig;
 
