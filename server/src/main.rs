@@ -1,6 +1,9 @@
+use std::io::Error;
 use actix::*;
 use actix_files as fs;
 use actix_web::{middleware::Logger, web, App, HttpServer};
+
+use sqlx::postgres::PgPoolOptions;
 
 mod domain;
 mod infra;
@@ -10,6 +13,7 @@ use infra::routes::webrtc::{webrtc_sender_route, webrtc_receiver_route};
 
 use crate::application::signal_server::SignalServer;
 use crate::infra::config::Config;
+use crate::infra::pg::create_pg_pool;
 use crate::infra::routes::login::login_route;
 use crate::infra::routes::ui::ui_routes;
 
@@ -21,12 +25,15 @@ async fn main() -> std::io::Result<()> {
 
     log::debug!("app config: {:?}", config);
 
-    let server = SignalServer::new().start();
+    let pg = create_pg_pool(&config.pg_url).await;
+
+    let signal_server = SignalServer::new().start();
 
     let server = HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(pg.clone()))
             .app_data(web::Data::new(config.clone()))
-            .app_data(web::Data::new(server.clone()))
+            .app_data(web::Data::new(signal_server.clone()))
 
             .configure(ui_routes)
             .configure(login_route)

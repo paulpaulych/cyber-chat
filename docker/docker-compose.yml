@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 services:
   db:
     image: postgres
@@ -9,7 +9,8 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: changeme
-      POSTGRES_DB: cyber_chat
+      POSTGRES_DB: cyber
 
 networks:
   cyber-net:
+    name: cyber
