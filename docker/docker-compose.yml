@@ -1,0 +1,15 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    networks:
+        - cyber-net
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: cyber_chat
+
+networks:
+  cyber-net:
