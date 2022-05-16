@@ -1,7 +1,8 @@
 use uuid::Uuid;
 use crate::domain::workstation::WksId;
 
-pub struct UserId(Uuid);
+#[derive(Debug)]
+pub struct UserId(pub(crate) Uuid);
 
 impl UserId {
     fn new() -> UserId {
@@ -9,11 +10,18 @@ impl UserId {
     }
 }
 
+impl From<&str> for UserId {
+    fn from(s: &str) -> Self {
+        UserId(Uuid::parse_str(&s).unwrap())
+    }
+}
+
+#[derive(Debug)]
 pub struct User {
-    id: UserId,
-    name: Option<String>,
-    wks_id: WksId,
-    archived: bool
+    pub id: UserId,
+    pub(crate) name: Option<String>,
+    pub wks_id: WksId,
+    pub(crate) archived: bool
 }
 
 impl User {

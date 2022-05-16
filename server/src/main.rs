@@ -1,4 +1,3 @@
-use std::io::Error;
 use actix::*;
 use actix_files as fs;
 use actix_web::{middleware::Logger, web, App, HttpServer};
@@ -10,10 +9,12 @@ mod infra;
 mod application;
 
 use infra::routes::webrtc::{webrtc_sender_route, webrtc_receiver_route};
+use crate::application::security::jwt::Jwt;
 
 use crate::application::signal_server::SignalServer;
+use crate::application::user_store::UserStore;
 use crate::infra::config::Config;
-use crate::infra::pg::create_pg_pool;
+use crate::infra::pg::init_pg_pool;
 use crate::infra::routes::login::login_route;
 use crate::infra::routes::ui::ui_routes;
 
@@ -25,13 +26,18 @@ async fn main() -> std::io::Result<()> {
 
     log::debug!("app config: {:?}", config);
 
-    let pg = create_pg_pool(&config.pg_url).await;
+    let pool = init_pg_pool(&config.pg_url).await.unwrap();
 
     let signal_server = SignalServer::new().start();
 
+    let user_store = UserStore { pool: pool.clone() };
+    let jwt_utils = Jwt::new("asdfjnasfduialskjfnaskjdfbnasiukfjbaskfjasbaksdjfbkasldfblkasdjfblaksjfblsak");
+
     let server = HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(pg.clone()))
+            .app_data(web::Data::new(jwt_utils.clone()))
+            .app_data(web::Data::new(user_store.clone()))
+            .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::new(signal_server.clone()))
 

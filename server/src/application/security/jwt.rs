@@ -11,6 +11,7 @@ pub struct Claims {
     pub wks_id: String,
 }
 
+#[derive(Clone)]
 pub struct Jwt {
     secret: Hmac<Sha256>
 }
