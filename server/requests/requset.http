@@ -1,0 +1,15 @@
+### login
+GET {{url}}/login
+
+> {%
+ client.assert(response.status === 200)
+ client.global.set("access_token", response.body["access_token"])
+ %}
+
+### get me
+GET {{url}}/api/users/me
+Authorization: Bearer {{access_token}}
+
+### get index
+GET {{url}}/
+Authorization: Bearer {{access_token}}

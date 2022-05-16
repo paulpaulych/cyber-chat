@@ -1,7 +1,7 @@
 use uuid::Uuid;
 use crate::domain::workstation::WksId;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UserId(pub(crate) Uuid);
 
 impl UserId {

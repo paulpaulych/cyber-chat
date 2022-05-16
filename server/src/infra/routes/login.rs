@@ -7,18 +7,18 @@ use crate::application::security::jwt::Jwt;
 use crate::application::user_store::UserStore;
 
 #[derive(Serialize, Debug)]
-struct TokenRes {
+struct LoginRes {
     access_token: String
 }
 
 #[derive(Serialize, Debug)]
-struct UnathorizedRes {
+struct UnauthorizedRes {
     message: String
 }
 
 const WKS_ID: &str = "Wks-Id";
 
-async fn create_token(
+pub async fn login(
     req: HttpRequest,
     jwt_utils: web::Data<Jwt>,
     users: web::Data<UserStore>,
@@ -34,15 +34,11 @@ async fn create_token(
             if let Some(new_wks_id) = new_wks_id {
                 res.cookie(Cookie::new(WKS_ID, new_wks_id.0.to_string()));
             }
-            Ok(res.json(TokenRes { access_token }))
+            Ok(res.json(LoginRes { access_token }))
         }
         Err(msg) => {
             Ok(HttpResponse::build(StatusCode::UNAUTHORIZED)
-                .json(UnathorizedRes { message: msg.to_string() }))
+                .json(UnauthorizedRes { message: msg.to_string() }))
         }
     }
-}
-
-pub fn login_route(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::resource("/login").route(web::get().to(create_token)));
 }
