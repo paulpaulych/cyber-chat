@@ -10,6 +10,7 @@ mod infra;
 mod application;
 
 use infra::routes::webrtc::{webrtc_sender_route, webrtc_receiver_route};
+use crate::application::room_store::RoomStore;
 use crate::application::security::jwt::Jwt;
 
 use crate::application::signal_server::SignalServer;
@@ -18,6 +19,7 @@ use crate::infra::config::Config;
 use crate::infra::pg::init_pg_pool;
 use crate::infra::routes::auth::authenticate;
 use crate::infra::routes::login::login;
+use crate::infra::routes::rooms::{create_room, get_room};
 use crate::infra::routes::ui::ui_routes;
 use crate::infra::routes::users::get_me;
 
@@ -31,6 +33,7 @@ async fn main() -> std::io::Result<()> {
     let pool = init_pg_pool(&config.pg_url).await.unwrap();
     let signal_server = SignalServer::new().start();
     let user_store = UserStore { pool: pool.clone() };
+    let room_store = RoomStore { pool: pool.clone() };
     let jwt_utils = Jwt::new(&config.jwt_secret);
 
     let server = HttpServer::new(move || {
@@ -46,9 +49,13 @@ async fn main() -> std::io::Result<()> {
             .service(web::scope("/api")
                 .wrap(auth)
                 .route("/users/me", web::get().to(get_me))
-                .service(web::scope("/webrtc/room/{room_id}")
-                    .route("/sender", web::get().to(webrtc_sender_route))
-                    .route("/receiver", web::get().to(webrtc_receiver_route))))
+                .service(web::scope("/rooms")
+                    .app_data(web::Data::new(room_store.clone()))
+                    .route("", web::post().to(create_room)))
+                    .route("/{room_id}", web::get().to(get_room))
+                    .service(web::scope("/{room_id}/webrtc")
+                        .route("/sender", web::get().to(webrtc_sender_route))
+                        .route("/receiver", web::get().to(webrtc_receiver_route))))
             .configure(ui_routes)
 
             .service(fs::Files::new("/static", "./static"))

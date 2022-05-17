@@ -2,46 +2,54 @@ use uuid::Uuid;
 use crate::domain::user::UserId;
 
 
-struct RoomId(Uuid);
+#[derive(Debug, Clone)]
+pub struct RoomId(pub Uuid);
 
 impl RoomId {
     fn new() -> RoomId {
         RoomId(Uuid::new_v4())
     }
 }
-
-struct Participant {
-    user_id: UserId,
-    name: Option<String>,
+impl From<&str> for RoomId {
+    fn from(s: &str) -> Self {
+        RoomId(Uuid::parse_str(&s).unwrap())
+    }
 }
 
-struct Participants {
-    host: Participant,
-    guest: Option<Participant>
+#[derive(Debug, Clone)]
+pub struct Room {
+    pub id: RoomId,
+    pub name: String,
+    pub closed: bool,
+    pub participants: Participants
 }
 
-struct Room {
-    id: RoomId,
-    name: String,
-    closed: bool,
+#[derive(Debug, Clone)]
+pub struct Participants {
+    pub host: Participant,
+    pub guest: Option<Participant>
+}
 
-    participants: Participants
+#[derive(Debug, Clone)]
+pub struct Participant {
+    pub user_id: UserId,
+    pub name: Option<String>,
 }
 
 struct GuestAlreadyJoined;
 
 impl Room {
 
-    fn new(
-        host_id: UserId,
-        name: String,
+    pub fn new(
+        room_name: String,
+        host: Participant,
     ) -> Room {
         Room {
             id: RoomId::new(),
-            name,
+            name: room_name,
             closed: false,
             participants: Participants {
-                host: Participant { user_id: host_id, name: None },
+                host,
                 guest: None
             }
         }

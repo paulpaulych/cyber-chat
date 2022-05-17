@@ -1,6 +1,5 @@
-use sqlx::{PgPool, FromRow, Postgres};
-use sqlx::postgres::PgArguments;
-use sqlx::query::QueryAs;
+use sqlx::{PgPool, FromRow};
+use crate::application::pg_common::PgQuery;
 use crate::domain::user::{User, UserId};
 use crate::domain::workstation::WksId;
 
@@ -16,8 +15,6 @@ struct UserRow {
     name: Option<String>,
     archived: bool
 }
-
-type PgQuery<'a, T> = QueryAs<'a, Postgres, T, PgArguments> ;
 
 impl UserStore {
 
@@ -48,15 +45,6 @@ impl UserStore {
             .bind(user.archived)
             .execute(&self.pool)
             .await.unwrap();
-    }
-
-    fn extract_user(&self, row: (String, String, Option<String>, bool)) -> User {
-        User {
-            id: UserId::from(&*row.0),
-            wks_id: WksId::from(&*row.1),
-            name: row.2,
-            archived: row.3
-        }
     }
 }
 

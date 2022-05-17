@@ -1,0 +1,33 @@
+### login
+GET {{url}}/login
+
+> {%
+ client.assert(response.status === 200)
+ client.global.set("access_token", response.body["access_token"])
+ %}
+
+### get me
+GET {{url}}/api/users/me
+Authorization: Bearer {{access_token}}
+
+### get index
+GET {{url}}/
+Authorization: Bearer {{access_token}}
+
+### create room
+POST {{url}}/api/rooms
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "name": "suka",
+  "host_name": "pisuka"
+}
+
+> {%
+ client.global.set("room_id", response.body["id"])
+%}
+
+### get room
+GET {{url}}/api/rooms/{{room_id}}
+Authorization: Bearer {{access_token}}
