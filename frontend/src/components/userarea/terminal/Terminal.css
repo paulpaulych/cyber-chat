@@ -28,3 +28,42 @@
 .MsgFromRoot {
     color: rgb(0, 139, 139);
 }
+
+.TerminalInputForm {
+    display: inline;
+}
+
+.TerminalInputView {
+    color: rgb(0, 139, 139);
+    font-family: monospace;
+    font-size: x-large;
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0 0 0 0;
+}
+
+.TerminalInput {
+    color: transparent;
+    font-family: monospace;
+    font-size: x-large;
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0 0 0 0;
+}
+
+.AbsoluteLeftTop {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.Invisible {
+    display: none;
+}
+
+.Input:active {
+    border: none;
+    background: inherit;
+}
