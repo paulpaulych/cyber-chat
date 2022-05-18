@@ -27,7 +27,7 @@ pub async fn create_room(
         name: req.host_name
     };
     let room = Room::new(req.name, host);
-    rooms.save(&room);
+    rooms.save(&room).await;
     Ok(HttpResponse::build(StatusCode::OK)
         .json(RoomCreatedRes { id: room.id.0.to_string() }))
 }

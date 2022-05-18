@@ -5,7 +5,7 @@ use actix_web::web::ServiceConfig;
 //TODO: use value from config
 const UI_DATA_PATH: &str = "../frontend/build";
 
-pub fn ui_routes(cfg: &mut ServiceConfig) {
+pub fn public_ui_routes(cfg: &mut ServiceConfig) {
     cfg
         .service(web::resource("/").to(|| NamedFile::open_async(UI_DATA_PATH.to_owned() + "/index.html")))
         .service(web::resource("/index.html").to(|| NamedFile::open_async(UI_DATA_PATH.to_owned() + "/index.html")))

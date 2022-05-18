@@ -20,7 +20,7 @@ select room.id,
 from room
          join host on room.id = host.room_id
          left join guest on room.id = guest.room_id
-where room.id = &1
+where room.id = $1
 ";
 
 impl RoomStore {
