@@ -1,6 +1,9 @@
-use actix_web::{Result, web, HttpResponse, Responder};
-use actix_web::http::StatusCode;
-use serde::{Serialize, Deserialize};
+use std::fmt::{Debug, Formatter};
+
+use actix_web::{HttpResponse, Responder, Result, web};
+use actix_web::error::{ErrorConflict, ErrorInternalServerError, ErrorNotFound};
+use serde::{Deserialize, Serialize};
+
 use crate::application::room_store::RoomStore;
 use crate::application::security::context::SecurityContext;
 use crate::domain::room::{Participant, Room, RoomId};
@@ -27,9 +30,39 @@ pub async fn create_room(
         name: req.host_name
     };
     let room = Room::new(req.name, host);
-    rooms.save(&room).await;
-    Ok(HttpResponse::build(StatusCode::OK)
-        .json(RoomCreatedRes { id: room.id.0.to_string() }))
+
+    rooms.save(&room).await
+        .map_err(ErrorInternalServerError)?;
+
+    Ok(HttpResponse::Ok().json(RoomCreatedRes { id: room.id.0.to_string() }))
+}
+
+#[derive(Deserialize, Debug)]
+pub struct JoinRoomReq {
+    guest_name: Option<String>,
+}
+
+pub async fn join_room(
+    room_id: web::Path<String>,
+    req: web::Json<JoinRoomReq>,
+    ctx: web::ReqData<SecurityContext>,
+    rooms: web::Data<RoomStore>
+) -> Result<HttpResponse> {
+    let req = req.0;
+    let room_id = RoomId::from(&*room_id.into_inner());
+    let room = rooms.find_by_id(room_id).await
+        .ok_or(ErrorNotFound("room not found"))?;
+    let guest = Participant {
+        user_id: ctx.user_id.clone(),
+        name: req.guest_name
+    };
+
+    let room = room.join(guest)
+        .map_err(|_| ErrorConflict("error"))?;
+
+    rooms.save(&room).await.unwrap();
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[derive(Serialize, Debug)]
@@ -47,10 +80,10 @@ struct ParticipantView {
 }
 
 pub async fn get_room(
-    id: web::Path<String>,
+    room_id: web::Path<String>,
     rooms: web::Data<RoomStore>
 ) -> Option<impl Responder> {
-    rooms.find_by_id(RoomId::from(&*id.into_inner())).await
+    rooms.find_by_id(RoomId::from(&*room_id.into_inner())).await
         .map(Into::into)
         .map(|room: RoomView| web::Json(room))
 }

@@ -4,7 +4,7 @@ version = "1.0.0"
 edition = "2021"
 
 [[bin]]
-name = "websocket-chat-server"
+name = "cyber_chat_server"
 path = "src/main.rs"
 
 [dependencies]

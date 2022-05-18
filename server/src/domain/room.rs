@@ -1,6 +1,6 @@
 use uuid::Uuid;
-use crate::domain::user::UserId;
 
+use crate::domain::user::UserId;
 
 #[derive(Debug, Clone)]
 pub struct RoomId(pub Uuid);
@@ -10,6 +10,7 @@ impl RoomId {
         RoomId(Uuid::new_v4())
     }
 }
+
 impl From<&str> for RoomId {
     fn from(s: &str) -> Self {
         RoomId(Uuid::parse_str(&s).unwrap())
@@ -21,13 +22,13 @@ pub struct Room {
     pub id: RoomId,
     pub name: String,
     pub closed: bool,
-    pub participants: Participants
+    pub participants: Participants,
 }
 
 #[derive(Debug, Clone)]
 pub struct Participants {
     pub host: Participant,
-    pub guest: Option<Participant>
+    pub guest: Option<Participant>,
 }
 
 #[derive(Debug, Clone)]
@@ -36,10 +37,13 @@ pub struct Participant {
     pub name: Option<String>,
 }
 
-struct GuestAlreadyJoined;
+#[derive(Debug)]
+pub enum JoinErr {
+    GuestAlreadyJoined,
+    HostCantJoinAsGuest,
+}
 
 impl Room {
-
     pub fn new(
         room_name: String,
         host: Participant,
@@ -50,28 +54,26 @@ impl Room {
             closed: false,
             participants: Participants {
                 host,
-                guest: None
-            }
+                guest: None,
+            },
         }
     }
 
-    fn join(
-        self,
-        user_id: UserId,
-        name: Option<String>
-    ) -> Result<Room, GuestAlreadyJoined>  {
-        match self.participants.guest {
-            Some(_) => Err(GuestAlreadyJoined),
-            None => Ok(
-                Room {
-                    participants: Participants {
-                        guest: Some(Participant { user_id, name }),
-                        ..self.participants
-                    },
-                    ..self
-                }
-            )
+    pub fn join(self, guest: Participant) -> Result<Room, JoinErr> {
+        if self.participants.guest.is_some() {
+            return Err(JoinErr::GuestAlreadyJoined);
         }
+        if self.participants.host.user_id.0 == guest.user_id.0 {
+            return Err(JoinErr::HostCantJoinAsGuest);
+        }
+
+        Ok(Room {
+            participants: Participants {
+                guest: Some(guest),
+                ..self.participants
+            },
+            ..self
+        })
     }
 
     fn close(self) -> Room {

@@ -3,4 +3,4 @@ pub mod security;
 pub mod login;
 pub mod user_store;
 pub mod room_store;
-pub mod pg_common;
+pub mod db_common;

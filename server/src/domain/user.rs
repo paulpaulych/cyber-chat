@@ -1,7 +1,9 @@
 use uuid::Uuid;
+
 use crate::domain::workstation::WksId;
 
 #[derive(Debug, Clone)]
+//TODO: make universal type for id with From, PartialEq etc.
 pub struct UserId(pub(crate) Uuid);
 
 impl UserId {
@@ -29,9 +31,9 @@ impl User {
         name: Option<String>,
         wks_id: WksId,
     ) -> User {
-        User { 
+        User {
             id: UserId::new(),
-            name, 
+            name,
             wks_id,
             archived: false,
         }

@@ -20,8 +20,8 @@ Authorization: Bearer {{access_token}}
 Content-Type: application/json
 
 {
-  "name": "suka",
-  "host_name": "pisuka"
+  "name": "room1",
+  "host_name": "host1"
 }
 
 > {%
@@ -31,3 +31,12 @@ Content-Type: application/json
 ### get room
 GET {{url}}/api/rooms/{{room_id}}
 Authorization: Bearer {{access_token}}
+
+### join room
+PUT {{url}}/api/rooms/{{room_id}}/guest
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "guest_name": "guest1"
+}

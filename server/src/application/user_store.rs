@@ -1,5 +1,6 @@
-use sqlx::{PgPool, FromRow};
-use crate::application::pg_common::PgQuery;
+use sqlx::{FromRow, PgPool};
+
+use crate::application::db_common::PgQuery;
 use crate::domain::user::{User, UserId};
 use crate::domain::workstation::WksId;
 

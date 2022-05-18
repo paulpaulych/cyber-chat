@@ -1,27 +1,26 @@
 use actix::*;
 use actix_files as fs;
-use actix_web::{middleware::Logger, web, App, HttpServer, Resource};
+use actix_web::{App, HttpServer, middleware::Logger, Resource, web};
 use actix_web_httpauth::middleware::HttpAuthentication;
-
 use sqlx::postgres::PgPoolOptions;
 
-mod domain;
-mod infra;
-mod application;
+use infra::routes::webrtc::{webrtc_receiver_route, webrtc_sender_route};
 
-use infra::routes::webrtc::{webrtc_sender_route, webrtc_receiver_route};
 use crate::application::room_store::RoomStore;
 use crate::application::security::jwt::Jwt;
-
 use crate::application::signal_server::SignalServer;
 use crate::application::user_store::UserStore;
 use crate::infra::config::Config;
 use crate::infra::pg::init_pg_pool;
 use crate::infra::routes::auth::authenticate;
 use crate::infra::routes::login::login;
-use crate::infra::routes::rooms::{create_room, get_room};
+use crate::infra::routes::rooms::{create_room, get_room, join_room};
 use crate::infra::routes::ui::public_ui_routes;
 use crate::infra::routes::users::get_me;
+
+mod domain;
+mod infra;
+mod application;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -56,6 +55,7 @@ async fn main() -> std::io::Result<()> {
                     .app_data(web::Data::new(room_store.clone()))
                     .service(root().route(web::post().to(create_room)))
                     .service(web::scope("/{room_id}")
+                        .route("/guest", web::put().to(join_room))
                         .service(root().route(web::get().to(get_room)))
                         .service(web::scope("/{room_id}/webrtc")
                             .route("/sender", web::get().to(webrtc_sender_route))
