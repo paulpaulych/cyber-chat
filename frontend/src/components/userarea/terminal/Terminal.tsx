@@ -1,5 +1,14 @@
 import "./Terminal.css"
-import {Dispatch, ReactElement, useState, SetStateAction, useEffect, FormEvent, ChangeEvent} from "react";
+import {
+    Dispatch,
+    ReactElement,
+    useState,
+    SetStateAction,
+    useEffect,
+    FormEvent,
+    ChangeEvent,
+    SyntheticEvent
+} from "react";
 
 type UICmd = {
     exec(input: string): Promise<UIStep>
@@ -64,6 +73,8 @@ const Input = (props: {
     const [cursorFlashEnabled, setCursorFlashEnabled] = useState(false)
     const [cursorPos, setCursorPos] = useState(0)
 
+    const [inputHistory, setInputHistory] = useState("")
+
     const submit = (e: FormEvent) => {
         e.preventDefault()
         props.onInput(input)
@@ -76,11 +87,15 @@ const Input = (props: {
         }, 500)
     }, [cursorFlashEnabled])
 
-    //TODO: change cursor position on left/right buttons pushed
     const onChange = (e: ChangeEvent<HTMLInputElement>) => {
         console.log("change " + e.target.selectionStart)
         setInput(e.target.value)
         setCursorPos(e.target.selectionStart)
+    }
+
+    const onSelect = (e: SyntheticEvent<HTMLInputElement>) => {
+        console.log("change " + e.currentTarget.selectionStart)
+        setCursorPos(e.currentTarget.selectionStart)
     }
 
     const showInputValue = cursorFlashEnabled
@@ -96,6 +111,7 @@ const Input = (props: {
                 type="text"
                 value={input}
                 onChange={onChange}
+                onSelect={onSelect}
             />
         </form>
     )
