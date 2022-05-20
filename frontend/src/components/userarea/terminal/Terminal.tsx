@@ -1,79 +1,76 @@
 import "./Terminal.css"
 import {
-    Dispatch,
-    ReactElement,
     useState,
-    SetStateAction,
     useEffect,
     FormEvent,
     ChangeEvent,
     SyntheticEvent
 } from "react";
-
-type UICmd = {
-    exec(input: string): Promise<UIStep>
-}
-
-type UIStep = UILastStep | UIInputRequired;
-
-type UILastStep = {
-    isLast: true,
-    output: string
-}
-
-type UIInputRequired = {
-    isLast: false
-    output: ReactElement,
-    input(input: string)
-}
+import {LaunchProcess} from "./process-api";
+import {useProcessManager} from "./useProcessManager";
 
 type Item =
     | { type: "input", text: string }
     | { type: "output", text: string }
 
-export function Terminal() {
+export function SystemTerminal(props: {
+    launchers: { cmd: string, launch: LaunchProcess }[]
+}) {
 
-    const [items, setItems] = useState<Item[]>([
-        { type: "input", text: "example in"},
-        { type: "output", text: "example out"},
-        { type: "output", text: "example out 2"},
-    ])
+    // TODO: maybe there's another way to re-render on empty input submit
+    const [trigger, setTrigger] = useState(0)
 
-    const appendHistory = (text: string) => {
-        setItems((prev) => prev.concat([{ type: "input", text}]))
+    const triggerRerender = () => {
+        setTrigger(prev => prev + 1)
     }
 
-    const renderItem = (item: Item, i) => {
-        switch (item.type) {
-            case "input": return <li key={i}>
-                <span>INPUT: </span>
-                <span className="UserInput">{item.text}</span>
-                <br/>
-            </li>
-            case "output": return <li key={i}>
-                <span>OUTPUT: </span>
-                <span className="Msg">{item.text}</span>
-                <br/>
-            </li>
-        }
-    }
+    const [output, onInput] = useProcessManager(props.launchers, triggerRerender)
+
+    return <Terminal trigger={trigger} output={output} onInput={onInput}/>
+}
+
+export function Terminal(props: {
+    trigger: number,
+    output: string | null,
+    onInput: (text: string) => void
+}) {
+
+    const [items, setItems] = useState<Item[]>([])
+
+    const addOutput = (text) => setItems((prev) => prev.concat([{ type: "output", text}]))
+
+    useEffect(() => {
+        if (!props.output) return
+        addOutput(props.output)
+    }, [props.trigger])
 
     return (
         <div className="Terminal">
             {items.map(renderItem)}
-            <Input onInput={appendHistory}/>
+            <Input onInput={props.onInput}/>
         </div>
     )
 }
 
+function renderItem(item: Item, i) {
+    switch (item.type) {
+        case "input": return <li key={i}>
+            <span className="UserInput">{item.text}</span>
+            <br/>
+        </li>
+        case "output": return <li key={i}>
+            <span className="Msg">{item.text}</span>
+            <br/>
+        </li>
+    }
+}
+
 const Input = (props: {
-    onInput: Dispatch<SetStateAction<string>>
+    onInput: (text: string) => void
 }) => {
     const [input, setInput] = useState("")
     const [cursorFlashEnabled, setCursorFlashEnabled] = useState(false)
     const [cursorPos, setCursorPos] = useState(0)
-
-    const [inputHistory, setInputHistory] = useState("")
 
     const submit = (e: FormEvent) => {
         e.preventDefault()
@@ -124,32 +121,3 @@ const Input = (props: {
         </>
     )
 }
-
-
-//for example
-const bla = () => (
-    <>
-        <span className="Msg bold">My very important call </span>
-        <span className="Msg">created.</span>
-        <br/>
-        <span className="Msg">Join link is now in your clipboard.</span>
-        <br/>
-        <span className="Msg">You can also use this: </span>
-        <a className="Msg" href="">https://videochat.com/join/some-conf-id-1010</a>
-        <br/>
-        <span className="Msg">Be free to run your commands in this cli. Type 'help' for more.</span>
-        <br/>
-        <span className="bold">jack@videochat:~$ </span>
-        <span className="UserInput">video on</span>
-        <br/>
-        <span>Message from ROOT: </span><br/>
-        <br/>
-        <span className="Msg bold">Bob</span>
-        <span className="Msg">connected.</span>
-
-        <br/>
-        <br/>
-        <span className="bold">jack@videochat:~$ </span>
-        <span className="bold">█</span>
-    </>
-)

@@ -1,5 +1,4 @@
 import {VideoTranslation} from "./VideoTranslation";
-import {Terminal} from "./terminal/Terminal";
 import {Mode} from "../VideoChat";
 import {SignalServer} from "../../core/webrtc/useSignalServer";
 import {RTCConn} from "../../core/webrtc/useRtcPeerConnection";
@@ -15,6 +14,6 @@ export const UserArea = (props: {
             <VideoTranslation mode={props.mode} server={props.server} conn={props.conn}/>
         </div>
         <div className="UserAreaTerminal">
-            <Terminal/>
+            {/*<Terminal/>*/}
         </div>
     </div>

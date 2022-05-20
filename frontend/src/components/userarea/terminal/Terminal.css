@@ -21,6 +21,10 @@
     color: aqua;
 }
 
+.Err {
+    color: #c90000;
+}
+
 .CmdPrelude {
     font-weight: bold;
 }
