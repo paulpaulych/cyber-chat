@@ -1,28 +1,32 @@
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useState} from "react";
 import {useKeyListener} from "./useKeyListener";
 
-const HISTORY_DISABLED_POS = -1
+const HISTORY_RESET_POS = -1
 
-export function useInputHistory(props: {
-    trigger: number
-    newSubmittedInput: string | null
-    setInputFromHistory: (text: string) => void
-    dropInputFromHistory: () => void
-}) {
+type InputHistory = {
+    append(text: string)
+    reset()
+    value: string | null
+}
 
-    const [offset, setOffset] = useState(HISTORY_DISABLED_POS)
+export function useInputHistory(): InputHistory {
+    const [offset, setOffset] = useState(HISTORY_RESET_POS)
     const [history, setHistory] = useState<string[]>([])
 
-    useEffect(() => {
-        if (!props.newSubmittedInput) return
+    const reset = useCallback(() => {
+        setOffset(HISTORY_RESET_POS)
+    }, [])
+
+    const append = useCallback((text) => {
+        if (!text) return
 
         // todo: not to insert element which is duplicate of previous
-        setHistory(prev => [props.newSubmittedInput].concat(prev))
-        setOffset(HISTORY_DISABLED_POS)
+        setHistory(prev => [text].concat(prev))
+        reset()
 
         // because history is updated only by trigger:
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [props.trigger])
+    }, [reset])
 
     const shiftUp = useCallback((_) => {
         if (offset >= history.length - 1) {
@@ -32,30 +36,22 @@ export function useInputHistory(props: {
 
         const newPos = offset + 1
         setOffset(newPos)
-        props.setInputFromHistory(history[newPos])
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [offset, history, props.setInputFromHistory])
+    }, [offset, history])
 
     const shiftDown = useCallback((_) => {
-        if (offset <= HISTORY_DISABLED_POS) {
+        if (offset <= HISTORY_RESET_POS) {
             console.log("HISTORY BOTTOM")
             return
         }
 
-        const newPos = offset - 1
-        setOffset(newPos)
-
-        if (offset === HISTORY_DISABLED_POS + 1) {
-            console.log("DISABLING HISTORY")
-            props.dropInputFromHistory()
-            return
+        if (offset === HISTORY_RESET_POS + 1) {
+            reset()
+            return;
         }
 
-        props.setInputFromHistory(history[newPos])
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [offset, history, props.setInputFromHistory, props.dropInputFromHistory])
+        const newPos = offset - 1
+        setOffset(newPos)
+    }, [offset, reset])
 
     useKeyListener({
         keySelector: e => e.key === "ArrowUp",
@@ -66,4 +62,11 @@ export function useInputHistory(props: {
         keySelector: e => e.key === "ArrowDown",
         onPress: shiftDown
     })
+
+    const value = (offset === HISTORY_RESET_POS)
+        ? null
+        : history[offset]
+        ?? null
+
+    return { value, reset, append }
 }

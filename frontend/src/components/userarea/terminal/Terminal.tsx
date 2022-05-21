@@ -39,6 +39,7 @@ export function Terminal(props: {
     useEffect(() => {
         if (!props.output) return
         addOutput(props.output)
+
         // because output is updated only by trigger:
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.trigger])
@@ -80,45 +81,23 @@ const Input = ({onSubmit}: {
     onSubmit: (input: TerminalInput) => void
 }) => {
 
-    const [inputFromHistory, setInputFromHistory] = useState<string | null>(null)
     const [typedInput, setTypedInput] = useState("")
     const [cursorPos, setCursorPos] = useState(0)
 
-    const [newSubmittedInputTrigger, setNewSubmittedInputTrigger] = useState(0)
-    const [newSubmittedInput, setNewSubmittedInput] = useState<string | null>(null)
-
-    const appendInputHistory = useCallback((text: string) => {
-        setNewSubmittedInput(text)
-        setNewSubmittedInputTrigger(prev => prev + 1)
-    }, [])
-
-    useInputHistory({
-        trigger: newSubmittedInputTrigger,
-        newSubmittedInput,
-        setInputFromHistory: (text) => {
-            console.log("setting value from history: " + text)
-            setInputFromHistory(text)
-            setCursorPos(text.length)
-        },
-        dropInputFromHistory: () => {
-            setInputFromHistory(null)
-            setCursorPos(typedInput.length)
-        }
-    })
+    const history = useInputHistory()
 
     const submit = useCallback((e: FormEvent) => {
         e.preventDefault()
-        const actInput = calcActualInput({inputFromHistory, typedInput})
+        const actInput = calcActualInput({ history, typedInput})
         onSubmit({type: "text", value: actInput})
-        console.log("submitted value " + actInput)
         setTypedInput("")
-        appendInputHistory(actInput)
-    }, [appendInputHistory, inputFromHistory, typedInput, onSubmit])
-
+        history.append(actInput)
+    }, [history, typedInput, onSubmit])
 
     const onChange = (e: ChangeEvent<HTMLInputElement>) => {
         setTypedInput(e.target.value)
         setCursorPos(e.target.selectionStart)
+        history.reset()
     }
 
     const onSelect = (e: SyntheticEvent<HTMLInputElement>) => {
@@ -129,7 +108,7 @@ const Input = ({onSubmit}: {
     const cancel = useCallback(() => onSubmit({type: "ctrl+c"}), [onSubmit])
     useKeyListener({keySelector: ctrlC, onPress: cancel})
 
-    const actualInput = calcActualInput({typedInput, inputFromHistory})
+    const actualInput = calcActualInput({typedInput, history})
 
     const invisibleInput = (
         <form className="TerminalInputForm" onSubmit={submit}>
@@ -154,6 +133,6 @@ const Input = ({onSubmit}: {
     )
 }
 
-function calcActualInput(p: { typedInput, inputFromHistory }) {
-    return p.inputFromHistory !== null ? p.inputFromHistory : p.typedInput
+function calcActualInput(p: { typedInput, history }) {
+    return p.history.value !== null ? p.history.value : p.typedInput
 }
