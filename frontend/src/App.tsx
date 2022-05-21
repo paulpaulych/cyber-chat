@@ -3,7 +3,7 @@ import {Mode, VideoChat} from "./components/VideoChat";
 import {SiteHeader} from "./components/SiteHeader";
 import "./App.css";
 import {echo, echoTwiceAndExit, echoWithTimeout} from "./components/userarea/commands/commands";
-import {SystemTerminal} from "./components/userarea/terminal/Terminal";
+import {Terminal} from "./components/userarea/terminal/Terminal";
 
 export default function App() {
     const [mode, setMode] = useState<Mode | null>(null)
@@ -19,7 +19,7 @@ export default function App() {
                   </div>
                 : <VideoChat mode={mode}/>
             }
-            <SystemTerminal launchers={[
+            <Terminal launchers={[
                 { cmd: "echo", launch: echo },
                 { cmd: "echo-with-timeout", launch: echoWithTimeout(5000) },
                 { cmd: "echo-twice", launch: echoTwiceAndExit },
