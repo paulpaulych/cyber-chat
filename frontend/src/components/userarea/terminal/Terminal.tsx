@@ -1,13 +1,10 @@
 import "./Terminal.css"
-import {
-    useState,
-    useEffect,
-    FormEvent,
-    ChangeEvent,
-    SyntheticEvent
-} from "react";
+import {ChangeEvent, FormEvent, SyntheticEvent, useCallback, useEffect, useState} from "react";
 import {LaunchProcess} from "./process-api";
 import {useProcessManager} from "./useProcessManager";
+import {useKeyListener} from "./useKeyListener";
+import {useInputHistory} from "./useInputHistory";
+import {useFlashingCursor} from "./useFlashingCursor";
 
 type Item =
     | { type: "input", text: string }
@@ -37,67 +34,102 @@ export function Terminal(props: {
 
     const [items, setItems] = useState<Item[]>([])
 
-    const addOutput = (text) => setItems((prev) => prev.concat([{ type: "output", text}]))
+    const addOutput = (text) => setItems((prev) => prev.concat([{type: "output", text}]))
 
     useEffect(() => {
         if (!props.output) return
         addOutput(props.output)
+        // because output is updated only by trigger:
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [props.trigger])
+
+    const onSubmit = (input: TerminalInput) => {
+        if (input.type === "text") {
+            props.onInput(input.value)
+        }
+    }
 
     return (
         <div className="Terminal">
             {items.map(renderItem)}
-            <Input onInput={props.onInput}/>
+            <Input onSubmit={onSubmit}/>
         </div>
     )
 }
 
 function renderItem(item: Item, i) {
     switch (item.type) {
-        case "input": return <li key={i}>
-            <span className="UserInput">{item.text}</span>
-            <br/>
-        </li>
-        case "output": return <li key={i}>
-            <span className="Msg">{item.text}</span>
-            <br/>
-        </li>
+        case "input":
+            return <li key={i}>
+                <span className="UserInput">{item.text}</span>
+                <br/>
+            </li>
+        case "output":
+            return <li key={i}>
+                <span className="Msg">{item.text}</span>
+                <br/>
+            </li>
     }
 }
 
-const Input = (props: {
-    onInput: (text: string) => void
+type TerminalInput =
+    | { type: "text", value: string }
+    | { type: "ctrl+c" }
+
+const Input = ({onSubmit}: {
+    onSubmit: (input: TerminalInput) => void
 }) => {
-    const [input, setInput] = useState("")
-    const [cursorFlashEnabled, setCursorFlashEnabled] = useState(false)
+
+    const [inputFromHistory, setInputFromHistory] = useState<string | null>(null)
+    const [typedInput, setTypedInput] = useState("")
     const [cursorPos, setCursorPos] = useState(0)
 
-    const submit = (e: FormEvent) => {
-        e.preventDefault()
-        props.onInput(input)
-        setInput("")
-    }
+    const [newSubmittedInputTrigger, setNewSubmittedInputTrigger] = useState(0)
+    const [newSubmittedInput, setNewSubmittedInput] = useState<string | null>(null)
 
-    useEffect(() => {
-        setTimeout(() => {
-            setCursorFlashEnabled(prev => !prev)
-        }, 500)
-    }, [cursorFlashEnabled])
+    const appendInputHistory = useCallback((text: string) => {
+        setNewSubmittedInput(text)
+        setNewSubmittedInputTrigger(prev => prev + 1)
+    }, [])
+
+    useInputHistory({
+        trigger: newSubmittedInputTrigger,
+        newSubmittedInput,
+        setInputFromHistory: (text) => {
+            console.log("setting value from history: " + text)
+            setInputFromHistory(text)
+            setCursorPos(text.length)
+        },
+        dropInputFromHistory: () => {
+            setInputFromHistory(null)
+            setCursorPos(typedInput.length)
+        }
+    })
+
+    const submit = useCallback((e: FormEvent) => {
+        e.preventDefault()
+        const actInput = calcActualInput({inputFromHistory, typedInput})
+        onSubmit({type: "text", value: actInput})
+        console.log("submitted value " + actInput)
+        setTypedInput("")
+        appendInputHistory(actInput)
+    }, [appendInputHistory, inputFromHistory, typedInput, onSubmit])
+
 
     const onChange = (e: ChangeEvent<HTMLInputElement>) => {
-        console.log("change " + e.target.selectionStart)
-        setInput(e.target.value)
+        setTypedInput(e.target.value)
         setCursorPos(e.target.selectionStart)
     }
 
     const onSelect = (e: SyntheticEvent<HTMLInputElement>) => {
-        console.log("change " + e.currentTarget.selectionStart)
         setCursorPos(e.currentTarget.selectionStart)
     }
 
-    const showInputValue = cursorFlashEnabled
-        ? input.substring(0, cursorPos) + "█" + input.substring(cursorPos + 1)
-        : input
+    const ctrlC = useCallback(e => e.ctrlKey && e.key === "c", [])
+    const cancel = useCallback(() => onSubmit({type: "ctrl+c"}), [onSubmit])
+    useKeyListener({keySelector: ctrlC, onPress: cancel})
+
+    const actualInput = calcActualInput({typedInput, inputFromHistory})
 
     const invisibleInput = (
         <form className="TerminalInputForm" onSubmit={submit}>
@@ -106,7 +138,7 @@ const Input = (props: {
                 onBlur={e => e.target.focus()}
                 className="AbsoluteLeftTop TerminalInput bold"
                 type="text"
-                value={input}
+                value={actualInput}
                 onChange={onChange}
                 onSelect={onSelect}
             />
@@ -115,9 +147,13 @@ const Input = (props: {
     return (
         <>
             <span className="bold">jack@videochat:~$ </span>
-            <label className="TerminalInputView">{showInputValue}</label>
+            <label className="TerminalInputView">{useFlashingCursor({text: actualInput, cursorPos})}</label>
             {invisibleInput}
             <br/>
         </>
     )
+}
+
+function calcActualInput(p: { typedInput, inputFromHistory }) {
+    return p.inputFromHistory !== null ? p.inputFromHistory : p.typedInput
 }
