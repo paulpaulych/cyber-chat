@@ -4,7 +4,7 @@ import {LaunchProcess} from "./process-api";
 import {useCommandShell} from "./useCommandShell";
 import {Input, TerminalInput} from "./Input";
 
-const USER = "user"
+const USER: string = "user"
 
 export function Terminal(props: {
     launchers: { cmd: string, launch: LaunchProcess }[]
@@ -35,7 +35,7 @@ export function Terminal(props: {
     return (
         <div className="Terminal">
             {records.map(renderRecord)}
-            <span className="bold">{USER}@videochat:~$ </span>
+            <CmdPrelude user={USER}/>
             <Input onSubmit={onInput}/>
         </div>
     )
@@ -51,6 +51,10 @@ function useRecords(): [Record[], (Record) => void] {
     return [records, addRecord]
 }
 
+function CmdPrelude(props: { user: string }) {
+    return (<span className="bold">{props.user}@cyberchat:~$ </span>)
+}
+
 type Record =
     | { type: "output", text: string }
     | { type: "echo", text: string }
@@ -59,7 +63,7 @@ function renderRecord(item: Record, i: number) {
     switch (item.type) {
         case "echo":
             return <div key={i}>
-                <span className="bold">{USER}@videochat:~$ </span>
+                <CmdPrelude user={USER}/>
                 <span className="UserInput">{item.text}</span>
                 <br/>
             </div>
