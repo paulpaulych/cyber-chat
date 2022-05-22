@@ -13,29 +13,43 @@ export function Terminal(props: {
 
     const [records, addRecord] = useRecords()
 
-    const addEcho = (text: string) => addRecord({type:"echo", text})
-    const addOutput = (text: string) => addRecord({type:"output", text})
+    const addEcho = useCallback((text: string) => addRecord({type:"echo", text}), [addRecord])
+    const addOutput = useCallback((text: string) => addRecord({type:"output", text}), [addRecord])
 
-    const onInput = (input: TerminalInputValue) => {
-        if (input.type === "text") {
-            addEcho(input.value)
-            shell.onInput(input)
+    const onInput = useCallback((input: TerminalInputValue) => {
+        if (input.type === "cancel") {
+            shell.cancel()
+            return
         }
-    }
+
+        switch (shell.state) {
+            case "cmd-running": {
+                shell.handleInput(input.value)
+                return
+            }
+            case "waiting-for-cmd": {
+                addEcho(input.value)
+                shell.runCmd(input.value)
+                return
+            }
+        }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [shell.state, addEcho])
 
     useEffect(() => {
-        if (!shell.output) return
+        if (!shell.output.value) return
 
-        addOutput(shell.output)
+        addOutput(shell.output.value)
 
         // because output is updated only by trigger:
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shell.updateTrigger])
+    }, [shell.output, addOutput])
 
     return (
         <div className="Terminal">
             {records.map(renderRecord)}
-            <CmdPrelude user={USER}/>
+            {shell.state === "waiting-for-cmd" && <CmdPrelude user={USER}/>}
             <TerminalInput onSubmit={onInput}/>
         </div>
     )

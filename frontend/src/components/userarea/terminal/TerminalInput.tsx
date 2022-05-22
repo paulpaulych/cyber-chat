@@ -1,9 +1,8 @@
 import "./Terminal.css"
-import {ChangeEvent, FormEvent, SyntheticEvent, useCallback, useEffect, useState} from "react";
+import {ChangeEvent, FormEvent, SyntheticEvent, useCallback, useState} from "react";
 import {useKeyListener} from "./useKeyListener";
 import {useInputHistory} from "./useInputHistory";
 import {useFlashingCursor} from "./useFlashingCursor";
-import {useTrigger} from "./useTrigger";
 
 export type TerminalInputValue =
     | { type: "text", value: string }
@@ -20,6 +19,7 @@ export function TerminalInput({onSubmit}: {
     const submit = useCallback((e: FormEvent) => {
         e.preventDefault()
         const actInput = calcActualInput({ history, typedInput})
+        console.log("pizda 1")
         onSubmit({type: "text", value: actInput})
         setTypedInput("")
         history.append(actInput)
@@ -35,8 +35,7 @@ export function TerminalInput({onSubmit}: {
         setCursorPos(e.currentTarget.selectionStart)
     }
 
-    const cancelTrigger = useCancelTrigger()
-    useEffect(() => {onSubmit({ type: "cancel" })}, [cancelTrigger, onSubmit])
+    useCancelListener(() => onSubmit({ type: "cancel" }))
 
     const actualInput = calcActualInput({typedInput, history})
 
@@ -62,11 +61,9 @@ export function TerminalInput({onSubmit}: {
     )
 }
 
-function useCancelTrigger() {
-    const [cancelTrigger, updateCancelTrigger] = useTrigger()
+function useCancelListener(onCancel: () => void) {
     const ctrlC = useCallback(e => e.ctrlKey && e.key === "c", [])
-    useKeyListener({keySelector: ctrlC, onPress: updateCancelTrigger})
-    return cancelTrigger
+    useKeyListener({keySelector: ctrlC, onPress: onCancel})
 }
 
 function calcActualInput(p: { typedInput, history }) {

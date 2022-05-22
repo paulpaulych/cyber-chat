@@ -21,6 +21,7 @@ export default function App() {
             }
             <Terminal launchers={[
                 { cmd: "echo", launch: echo },
+                { cmd: "cancel-echo", launch: echo },
                 { cmd: "echo-with-timeout", launch: echoWithTimeout(5000) },
                 { cmd: "echo-twice", launch: echoTwiceAndExit },
             ]}/>

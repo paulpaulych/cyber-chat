@@ -1,107 +1,60 @@
-import {LaunchProcess, ProcessOutput} from "./process-api";
-import {useCallback, useMemo, useState} from "react";
-import {Trigger, useTrigger} from "./useTrigger";
+import {LaunchProcess} from "./process-api";
+import {useCallback} from "react";
+import {ProcessExit, useCurrentProcess} from "./useCurrentProcess";
+import {MyState, useMyState} from "./useMyState";
 
-export type CmdShell = {
-    output: string | null,
-    onInput: (input: CmdShellInput) => void,
-    updateTrigger: Trigger
+export type CmdShell =
+    | {
+    state: "waiting-for-cmd"
+    output: MyState<string | null>
+    runCmd: (text: string) => void
+    cancel: () => void
+} | {
+    state: "cmd-running",
+    output: MyState<string | null>
+    handleInput: (text: string) => void
+    cancel: () => void
 }
-
-export type CmdShellInput =
-    | { type: "text", value: string }
-    | { type: "ctrl+c" }
 
 export function useCommandShell(
     launchers: { cmd: string, launch: LaunchProcess }[],
 ): CmdShell {
-    const [output, setOutput] = useState<string | null>(null)
+    const [ownOutput, setOwnOutput] = useMyState<string | null>(null)
 
-    const [currentProcess, setCurrentProcess] = useState<CurrentProcess | null>(null)
+    const onStartFailed = useCallback((cmd: string) => {
+        setOwnOutput("unknown command: " + cmd)
+    }, [setOwnOutput])
 
-    const [trigger, updateTrigger] = useTrigger()
-
-    const write = useCallback((out: string) => {
-        setOutput(out)
-        updateTrigger()
-    }, [updateTrigger])
-
-    const startProcess = useCallback((cmd: string) => {
-        const launcher = launchers.find(f => f.cmd === cmd)
-        if (!launcher) {
-            write("unknown command " + cmd)
-            return
+    const onExit = useCallback((exit: ProcessExit) => {
+        const {cmd, exitStatus} = exit
+        switch (exitStatus.code) {
+            case "ok":
+                return setOwnOutput(`${cmd} finished"`)
+            case "err":
+                return setOwnOutput(`${cmd} exited with error: ${exitStatus.error}`)
         }
+    }, [setOwnOutput])
 
-        const process = { cmd,
-            onInput: launcher.launch({
-                setOutput: (out) => {
-                    handleProcessOutput({
-                        out,
-                        cmd: launcher.cmd,
-                        write,
-                        dropProcess: () => setCurrentProcess(null)
-                    })
-                }
-            })
-        }
+    const process = useCurrentProcess({launchers, onStartFailed, onExit})
 
-        if (process) {
-            setCurrentProcess(process)
-            write(`${process.cmd} started`)
-        }
-    }, [launchers, write])
+    const printCtrlC = useCallback(() => {
+        setOwnOutput("^C")
+    }, [setOwnOutput])
 
-    const onInput = useMemo(() => {
-        if (!currentProcess) {
-            return (input: CmdShellInput) => {
-                if (input.type === "text") {
-                    startProcess(input.value)
-                    return
-                }
+    switch (process.state) {
+        case "none":
+            return {
+                state: "waiting-for-cmd",
+                cancel: printCtrlC,
+                output: ownOutput,
+                runCmd: process.startProcess,
             }
-        }
-        return (input: CmdShellInput) => {
-            if (input.type === "text") {
-                currentProcess.onInput(input.value)
-                return
-            } else if (input.type === "ctrl+c") {
-                // todo:  terminate process
+        case "active":
+            return {
+                state: "cmd-running",
+                cancel: process.cancel,
+                output: process.output,
+                handleInput: process.handleInput
             }
-        }
-    }, [currentProcess, startProcess])
-
-    return { output, onInput, updateTrigger: trigger}
-}
-
-type CurrentProcess = {
-    cmd: string,
-    onInput: (input: string) => void,
-}
-
-function handleProcessOutput({cmd, out, dropProcess, write}: {
-    cmd: string,
-    out: ProcessOutput,
-    dropProcess: () => void,
-    write: (text: string) => void,
-}) {
-    switch (out.type) {
-        case "regular": {
-            write(`${cmd}: ${out.text}`)
-            break
-        }
-        case "error": {
-            write(`${cmd} error: ${out.text}"`)
-            break
-        }
-        case "exit": {
-            if (out.status.code === "ok") {
-                write(`${cmd} finished"`)
-            } else {
-                write(`${cmd} exited with error: ${out.status.error}`)
-            }
-            dropProcess()
-            break
-        }
     }
 }
