@@ -1,17 +1,17 @@
 import "./Terminal.css"
-import {ChangeEvent, FormEvent, SyntheticEvent, useCallback, useState} from "react";
+import {ChangeEvent, FormEvent, SyntheticEvent, useCallback, useEffect, useState} from "react";
 import {useKeyListener} from "./useKeyListener";
 import {useInputHistory} from "./useInputHistory";
 import {useFlashingCursor} from "./useFlashingCursor";
+import {useTrigger} from "./useTrigger";
 
-export type TerminalInput =
+export type TerminalInputValue =
     | { type: "text", value: string }
-    | { type: "ctrl+c" }
+    | { type: "cancel" }
 
-export function Input({onSubmit}: {
-    onSubmit: (input: TerminalInput) => void
+export function TerminalInput({onSubmit}: {
+    onSubmit: (input: TerminalInputValue) => void
 }) {
-
     const [typedInput, setTypedInput] = useState("")
     const [cursorPos, setCursorPos] = useState(0)
 
@@ -31,13 +31,12 @@ export function Input({onSubmit}: {
         history.reset()
     }
 
-    const onSelect = (e: SyntheticEvent<HTMLInputElement>) => {
+    const onCursorPosChanged = (e: SyntheticEvent<HTMLInputElement>) => {
         setCursorPos(e.currentTarget.selectionStart)
     }
 
-    const ctrlC = useCallback(e => e.ctrlKey && e.key === "c", [])
-    const cancel = useCallback(() => onSubmit({type: "ctrl+c"}), [onSubmit])
-    useKeyListener({keySelector: ctrlC, onPress: cancel})
+    const cancelTrigger = useCancelTrigger()
+    useEffect(() => {onSubmit({ type: "cancel" })}, [cancelTrigger, onSubmit])
 
     const actualInput = calcActualInput({typedInput, history})
 
@@ -50,7 +49,7 @@ export function Input({onSubmit}: {
                 type="text"
                 value={actualInput}
                 onChange={onChange}
-                onSelect={onSelect}
+                onSelect={onCursorPosChanged}
             />
         </form>
     )
@@ -61,6 +60,13 @@ export function Input({onSubmit}: {
             <br/>
         </>
     )
+}
+
+function useCancelTrigger() {
+    const [cancelTrigger, updateCancelTrigger] = useTrigger()
+    const ctrlC = useCallback(e => e.ctrlKey && e.key === "c", [])
+    useKeyListener({keySelector: ctrlC, onPress: updateCancelTrigger})
+    return cancelTrigger
 }
 
 function calcActualInput(p: { typedInput, history }) {

@@ -2,7 +2,7 @@ import "./Terminal.css"
 import {useCallback, useEffect, useState} from "react";
 import {LaunchProcess} from "./process-api";
 import {useCommandShell} from "./useCommandShell";
-import {Input, TerminalInput} from "./Input";
+import {TerminalInput, TerminalInputValue} from "./TerminalInput";
 
 const USER: string = "user"
 
@@ -16,7 +16,7 @@ export function Terminal(props: {
     const addEcho = (text: string) => addRecord({type:"echo", text})
     const addOutput = (text: string) => addRecord({type:"output", text})
 
-    const onInput = (input: TerminalInput) => {
+    const onInput = (input: TerminalInputValue) => {
         if (input.type === "text") {
             addEcho(input.value)
             shell.onInput(input)
@@ -36,7 +36,7 @@ export function Terminal(props: {
         <div className="Terminal">
             {records.map(renderRecord)}
             <CmdPrelude user={USER}/>
-            <Input onSubmit={onInput}/>
+            <TerminalInput onSubmit={onInput}/>
         </div>
     )
 }
