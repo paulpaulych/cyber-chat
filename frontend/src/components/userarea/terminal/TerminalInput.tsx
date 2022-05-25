@@ -8,6 +8,7 @@ export type TerminalInputValue =
     | { type: "text", value: string }
     | { type: "cancel" }
 
+//TODO: move cursor when using command history
 export function TerminalInput({onSubmit}: {
     onSubmit: (input: TerminalInputValue) => void
 }) {
