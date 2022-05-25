@@ -1,6 +1,7 @@
-import {LaunchProcess, NEW_LINE, Printable} from "./process-api";
+import {LaunchProcess} from "./api/process-api";
 import {useCallback} from "react";
 import {ProcessExit, useCurrentProcess} from "./useCurrentProcess";
+import {NEW_LINE, Printable} from "./api/system-call";
 
 export type CmdShell =
     | {

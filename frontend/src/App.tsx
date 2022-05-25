@@ -2,7 +2,7 @@ import React, {useState} from 'react';
 import {Mode, VideoChat} from "./components/VideoChat";
 import {SiteHeader} from "./components/SiteHeader";
 import "./App.css";
-import {echo, echoTwiceAndExit, echoWithTimeout} from "./components/userarea/commands/commands";
+import {echo} from "./components/userarea/commands/echo";
 import {Terminal} from "./components/userarea/terminal/Terminal";
 
 export default function App() {
@@ -21,9 +21,6 @@ export default function App() {
             }
             <Terminal launchers={[
                 { cmd: "echo", launch: echo },
-                { cmd: "cancel-echo", launch: echo },
-                { cmd: "echo-with-timeout", launch: echoWithTimeout(5000) },
-                { cmd: "echo-twice", launch: echoTwiceAndExit },
             ]}/>
         </div>
     );

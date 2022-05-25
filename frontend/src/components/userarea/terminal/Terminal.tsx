@@ -1,9 +1,10 @@
 import "./Terminal.css"
 import {useCallback, useState} from "react";
-import {LaunchProcess, Printable} from "./process-api";
+import {LaunchProcess} from "./api/process-api";
 import {useCommandShell} from "./useCommandShell";
 import {TerminalInput, TerminalInputValue} from "./TerminalInput";
 import {Out, TerminalOutput} from "./renderTerminalOutput";
+import {Printable} from "./api/system-call";
 
 const USER: string = "user"
 

@@ -9,6 +9,8 @@ type InputHistory = {
     value: string | null
 }
 
+// todo: move cursor when using command history
+// todo: not to insert element which is duplicate of previous
 export function useInputHistory(): InputHistory {
     const [offset, setOffset] = useState(HISTORY_RESET_POS)
     const [history, setHistory] = useState<string[]>([])
@@ -20,7 +22,6 @@ export function useInputHistory(): InputHistory {
     const append = useCallback((text) => {
         if (!text) return
 
-        // todo: not to insert element which is duplicate of previous
         setHistory(prev => [text].concat(prev))
         reset()
 

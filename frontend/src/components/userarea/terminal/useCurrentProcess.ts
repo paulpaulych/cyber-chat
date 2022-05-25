@@ -1,5 +1,6 @@
-import {ExitStatus, LaunchProcess, OnInput, Process, SysCall, Printable} from "./process-api";
+import {LaunchProcess, OnInput, Process} from "./api/process-api";
 import {useCallback, useState} from "react";
+import {ExitStatus, Printable, SysCall} from "./api/system-call";
 
 export type CurrentProcessHook =
     | {

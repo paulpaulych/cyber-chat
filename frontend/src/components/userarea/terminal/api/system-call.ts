@@ -1,4 +1,3 @@
-
 export type Text = string
 
 export type ExitStatus =  { code: "ok" } | { code: "err", error: Text }
@@ -11,15 +10,11 @@ export type SysCall =
     | { type: "print", values: Printable[] }
     | { type: "exit", status: ExitStatus }
 
-export type ProcessParams = {
-    sysCall: (call: SysCall) => void
+
+export function sysPrint(values: Printable[]): SysCall {
+    return { type: "print", values }
 }
 
-export type OnInput = (input: string) => void
-
-export type Process = {
-    onInput: OnInput
-    onInterrupt: () => void
+export function sysExit(status: ExitStatus): SysCall {
+    return { type: "exit", status }
 }
-
-export type LaunchProcess = (params: ProcessParams) => Process
