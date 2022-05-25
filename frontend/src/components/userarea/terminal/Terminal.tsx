@@ -1,90 +1,90 @@
 import "./Terminal.css"
-import {useCallback, useEffect, useState} from "react";
-import {LaunchProcess} from "./process-api";
+import {useCallback, useState} from "react";
+import {LaunchProcess, Printable} from "./process-api";
 import {useCommandShell} from "./useCommandShell";
 import {TerminalInput, TerminalInputValue} from "./TerminalInput";
+import {Out, TerminalOutput} from "./renderTerminalOutput";
 
 const USER: string = "user"
 
 export function Terminal(props: {
     launchers: { cmd: string, launch: LaunchProcess }[]
 }) {
-    const shell = useCommandShell(props.launchers)
+    const [items, setItems] = useState<Out[]>([])
 
-    const [records, addRecord] = useRecords()
+    const appendOutput = useCallback((out: Out[]) => {
+        setItems(prev => prev.concat(out))
+    }, [setItems])
 
-    const addEcho = useCallback((text: string) => addRecord({type:"echo", text}), [addRecord])
-    const addOutput = useCallback((text: string) => addRecord({type:"output", text}), [addRecord])
+    const shell = useCommandShell({
+        launchers: props.launchers,
+        onPrint: printables => appendOutput(printables.map(toTerminalOutput))
+    })
 
-    const onInput = useCallback((input: TerminalInputValue) => {
-        if (input.type === "cancel") {
-            shell.cancel()
-            return
-        }
+    const addEcho = useCallback((text: string) => {
+        appendOutput([
+            { type: "prelude", user: USER },
+            { type: "text", value: text },
+            { type: "br" },
+        ])
+    }, [appendOutput])
 
+    const addOutput = useCallback((text: string) => {
+        appendOutput([{type:"text", value: text}])
+    }, [appendOutput])
+
+    const onTextInput = useCallback((input: string) => {
         switch (shell.state) {
             case "cmd-running": {
-                shell.handleInput(input.value)
+                addOutput(input)
+                shell.handleInput(input)
                 return
             }
             case "waiting-for-cmd": {
-                addEcho(input.value)
-                shell.runCmd(input.value)
+                addEcho(input)
+                shell.runCmd(input)
                 return
             }
         }
+    }, [shell, addEcho, addOutput])
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shell.state, addEcho])
+    const onCancel = useCallback(() => {
+        appendOutput([{ type: "text", value: "^C"}])
+        switch (shell.state) {
+            case "cmd-running": {
+                shell.interrupt()
+                return
+            }
+            case "waiting-for-cmd": {
+                return
+            }
+        }
+    }, [shell, appendOutput])
 
-    useEffect(() => {
-        if (!shell.output.value) return
 
-        addOutput(shell.output.value)
-
-        // because output is updated only by trigger:
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shell.output, addOutput])
+    const onInput = useCallback((input: TerminalInputValue) => {
+        switch (input.type) {
+            case "text": {
+                onTextInput(input.value)
+                return
+            }
+            case "cancel": {
+                onCancel()
+            }
+        }
+    }, [onTextInput, onCancel])
 
     return (
         <div className="Terminal">
-            {records.map(renderRecord)}
-            {shell.state === "waiting-for-cmd" && <CmdPrelude user={USER}/>}
+            <TerminalOutput enablePrelude={shell.state === "waiting-for-cmd"} user={USER} output={items}/>
             <TerminalInput onSubmit={onInput}/>
         </div>
     )
 }
 
-function useRecords(): [Record[], (Record) => void] {
-    const [records, setRecords] = useState<Record[]>([])
-
-    const addRecord = useCallback((record: Record) => {
-        setRecords(prev => prev.concat([record]))
-    }, [])
-
-    return [records, addRecord]
-}
-
-function CmdPrelude(props: { user: string }) {
-    return (<span className="bold">{props.user}@cyberchat:~$ </span>)
-}
-
-type Record =
-    | { type: "output", text: string }
-    | { type: "echo", text: string }
-
-function renderRecord(item: Record, i: number) {
-    switch (item.type) {
-        case "echo":
-            return <div key={i}>
-                <CmdPrelude user={USER}/>
-                <span className="UserInput">{item.text}</span>
-                <br/>
-            </div>
-        case "output":
-            return <div key={i}>
-                <span className="Msg">{item.text}</span>
-                <br/>
-            </div>
+function toTerminalOutput(p: Printable): Out {
+    if (typeof p === "string") {
+        return { type: "text", value: p }
     }
+    return { type: "br" }
 }

@@ -1,13 +1,10 @@
-import {MyState, useMyState} from "./useMyState";
-import {ExitStatus, LaunchProcess, OnInput, Process, ProcessOutput} from "./process-api";
+import {ExitStatus, LaunchProcess, OnInput, Process, SysCall, Printable} from "./process-api";
 import {useCallback, useState} from "react";
 
 export type CurrentProcessHook =
     | {
     state: "active"
-    cmd: string
-    output: MyState<string>
-    cancel: () => void
+    interrupt: () => void
     handleInput: OnInput
 }
     | {
@@ -26,32 +23,28 @@ export function useCurrentProcess(props: {
     launchers: { cmd: string, launch: LaunchProcess }[]
     onStartFailed: (cmd: string) => void
     onExit: (exit: ProcessExit) => void
+    onPrint: (o: Printable[]) => void
 }): CurrentProcessHook {
-
-    const [output, setOutput] = useMyState<string | null>(null)
-    const [curProcess, setCurProcess] = useState<CurrentProcessInternal | null>(null)
+    const [curProcess, setCurProcess] = useState<Process | null>(null)
 
     const detachProcess = useCallback(() => {
         setCurProcess(null)
     }, [])
 
-    const handleProcessOutput = useCallback((out: ProcessOutput) => {
-        switch (out.type) {
-            case "regular": {
-                setOutput(out.text)
-                break
-            }
-            case "error": {
-                setOutput("ERROR: " + out.text)
+    const handleSysCall = useCallback((from: string, call: SysCall) => {
+        console.log("call: " + JSON.stringify(call))
+        switch (call.type) {
+            case "print": {
+                props.onPrint(call.values)
                 break
             }
             case "exit": {
-                props.onExit({cmd: curProcess.cmd, exitStatus: out.status})
+                props.onExit({cmd: from, exitStatus: call.status})
                 detachProcess()
                 break
             }
         }
-    }, [detachProcess, curProcess, setOutput, props])
+    }, [detachProcess, props])
 
     const startProcess = useCallback((cmd: string) => {
         const launcher = props.launchers.find(f => f.cmd === cmd)
@@ -60,14 +53,11 @@ export function useCurrentProcess(props: {
             return
         }
 
-        setCurProcess({
-            cmd,
-            process: launcher.launch({setOutput: handleProcessOutput})
-        })
-    }, [props, handleProcessOutput])
+        setCurProcess(launcher.launch({sysCall: (call) => handleSysCall(cmd, call)}))
+    }, [props, handleSysCall])
 
-    const cancelProcess = () => {
-        curProcess.process.cancel()
+    const interruptProcess = () => {
+        curProcess.onInterrupt()
         detachProcess()
     }
 
@@ -77,14 +67,7 @@ export function useCurrentProcess(props: {
 
     return {
         state: "active",
-        cmd: curProcess.cmd,
-        output,
-        handleInput: curProcess.process.onInput,
-        cancel: cancelProcess
+        handleInput: curProcess.onInput,
+        interrupt: interruptProcess
     }
-}
-
-type CurrentProcessInternal = {
-    cmd: string,
-    process: Process,
 }

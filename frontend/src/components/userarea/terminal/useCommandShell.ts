@@ -1,59 +1,47 @@
-import {LaunchProcess} from "./process-api";
+import {LaunchProcess, NEW_LINE, Printable} from "./process-api";
 import {useCallback} from "react";
 import {ProcessExit, useCurrentProcess} from "./useCurrentProcess";
-import {MyState, useMyState} from "./useMyState";
 
 export type CmdShell =
     | {
     state: "waiting-for-cmd"
-    output: MyState<string | null>
     runCmd: (text: string) => void
-    cancel: () => void
 } | {
     state: "cmd-running",
-    output: MyState<string | null>
     handleInput: (text: string) => void
-    cancel: () => void
+    interrupt: () => void
 }
 
-export function useCommandShell(
+export function useCommandShell({onPrint, launchers}: {
     launchers: { cmd: string, launch: LaunchProcess }[],
-): CmdShell {
-    const [ownOutput, setOwnOutput] = useMyState<string | null>(null)
-
+    onPrint: (o: Printable[]) => void
+}): CmdShell {
     const onStartFailed = useCallback((cmd: string) => {
-        setOwnOutput("unknown command: " + cmd)
-    }, [setOwnOutput])
+        onPrint(["unknown command: " + cmd, NEW_LINE])
+    }, [onPrint])
 
     const onExit = useCallback((exit: ProcessExit) => {
         const {cmd, exitStatus} = exit
         switch (exitStatus.code) {
             case "ok":
-                return setOwnOutput(`${cmd} finished"`)
+                return onPrint([NEW_LINE, `${cmd} finished`, NEW_LINE])
             case "err":
-                return setOwnOutput(`${cmd} exited with error: ${exitStatus.error}`)
+                return onPrint([NEW_LINE, `${cmd} exited with error: ${exitStatus.error}`])
         }
-    }, [setOwnOutput])
+    }, [onPrint])
 
-    const process = useCurrentProcess({launchers, onStartFailed, onExit})
-
-    const printCtrlC = useCallback(() => {
-        setOwnOutput("^C")
-    }, [setOwnOutput])
+    const process = useCurrentProcess({launchers, onStartFailed, onExit, onPrint})
 
     switch (process.state) {
         case "none":
             return {
                 state: "waiting-for-cmd",
-                cancel: printCtrlC,
-                output: ownOutput,
                 runCmd: process.startProcess,
             }
         case "active":
             return {
                 state: "cmd-running",
-                cancel: process.cancel,
-                output: process.output,
+                interrupt: process.interrupt,
                 handleInput: process.handleInput
             }
     }

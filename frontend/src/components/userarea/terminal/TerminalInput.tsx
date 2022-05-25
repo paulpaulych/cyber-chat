@@ -11,7 +11,7 @@ export type TerminalInputValue =
 export function TerminalInput({onSubmit}: {
     onSubmit: (input: TerminalInputValue) => void
 }) {
-    const [typedInput, setTypedInput] = useState("")
+    const [typedInput, setTypedInput] = useState<string>("")
     const [cursorPos, setCursorPos] = useState(0)
 
     const history = useInputHistory()
@@ -19,7 +19,6 @@ export function TerminalInput({onSubmit}: {
     const submit = useCallback((e: FormEvent) => {
         e.preventDefault()
         const actInput = calcActualInput({ history, typedInput})
-        console.log("pizda 1")
         onSubmit({type: "text", value: actInput})
         setTypedInput("")
         history.append(actInput)
