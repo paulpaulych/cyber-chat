@@ -1,16 +1,26 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Mode, VideoChat} from "./components/VideoChat";
 import {SiteHeader} from "./components/SiteHeader";
 import "./App.css";
 import {echo} from "./components/userarea/commands/echo";
 import {Terminal} from "./components/userarea/terminal/Terminal";
+import {doSomeExternalWork} from "./components/userarea/commands/doSomeExternalWork";
 
 export default function App() {
+    const [title, setTitle] = useState("Cyber Chat")
+
     const [mode, setMode] = useState<Mode | null>(null)
+
+    const launchers = useMemo(() => {
+        return [
+            { cmd: "echo", launch: echo },
+            { cmd: "change-title", launch: doSomeExternalWork(setTitle) }
+        ]
+    }, [setTitle])
 
     return (
         <div className="App">
-            <SiteHeader/>
+            <SiteHeader title={title}/>
             { mode === null
                 ? <div>
                     <label>CHOOSE YOUR MODE</label>
@@ -19,9 +29,7 @@ export default function App() {
                   </div>
                 : <VideoChat mode={mode}/>
             }
-            <Terminal launchers={[
-                { cmd: "echo", launch: echo },
-            ]}/>
+            <Terminal launchers={launchers}/>
         </div>
     );
 }
