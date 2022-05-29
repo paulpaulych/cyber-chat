@@ -1,4 +1,4 @@
-import {SignalServer} from "./useSignalServer";
+import {RoomServer} from "./useRoomServer";
 import {useEffect, useState} from "react";
 import {RTCConn} from "./useRtcPeerConnection";
 import {useIceCandidatesExchange} from "./useIceCandidatesExchange";
@@ -9,7 +9,7 @@ type SenderNegotiation = {
 }
 
 export function useSenderNegotiation(
-    server: SignalServer,
+    server: RoomServer,
     conn: RTCConn,
     stream: MediaStream | null,
 ): SenderNegotiation {
@@ -25,7 +25,7 @@ export function useSenderNegotiation(
 }
 
 function useSenderSdpExchange(
-    server: SignalServer,
+    server: RoomServer,
     conn: RTCConn,
     stream: MediaStream | null,
 ): { ready: boolean, error: string } {

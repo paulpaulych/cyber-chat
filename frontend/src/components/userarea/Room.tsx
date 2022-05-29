@@ -1,5 +1,5 @@
 import {Mode} from "../CyberChat";
-import {SignalServer, useSignalServer} from "../../core/webrtc/useSignalServer";
+import {RoomServer, useRoomServer} from "../../core/webrtc/useRoomServer";
 import {VideoStreaming} from "./VideoStreaming";
 import {useContext, useEffect} from "react";
 import {LogContext} from "../log/LogContext";
@@ -15,7 +15,7 @@ export function Room(props: {
     const role = mode === "send" ? "sender" : "receiver"
     const url = `ws://localhost:8080/webrtc/room/${props.id}/` + role
 
-    const server = useSignalServer(url)
+    const server = useRoomServer(url)
 
     useLoggingOf(server)
 
@@ -27,7 +27,7 @@ export function Room(props: {
     </div>)
 }
 
-function useLoggingOf(server: SignalServer) {
+function useLoggingOf(server: RoomServer) {
     const log = useContext(LogContext)
 
     useEffect(() => {

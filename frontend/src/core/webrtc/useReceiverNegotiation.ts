@@ -1,4 +1,4 @@
-import {SignalServer} from "./useSignalServer";
+import {RoomServer} from "./useRoomServer";
 import {RTCConn} from "./useRtcPeerConnection";
 import {useIceCandidatesExchange} from "./useIceCandidatesExchange";
 import {useEffect, useState} from "react";
@@ -10,7 +10,7 @@ type ReceiverNegotiation = {
 }
 
 export function useReceiverNegotiation(
-    server: SignalServer,
+    server: RoomServer,
     conn: RTCConn,
 ): ReceiverNegotiation {
 
@@ -25,7 +25,7 @@ export function useReceiverNegotiation(
 }
 
 function useReceiverSdpExchange(
-    server: SignalServer,
+    server: RoomServer,
     conn: RTCConn,
 ): { ready: boolean, error: string | null } {
 

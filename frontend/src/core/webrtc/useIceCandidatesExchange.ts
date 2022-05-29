@@ -1,4 +1,4 @@
-import {SignalServer} from "./useSignalServer";
+import {RoomServer} from "./useRoomServer";
 import {RTCConn} from "./useRtcPeerConnection";
 import {useEffect, useState} from "react";
 import {isOk} from "../../utils/Res";
@@ -9,7 +9,7 @@ type IceCandidateExchange = {
 }
 
 export function useIceCandidatesExchange(
-    server: SignalServer,
+    server: RoomServer,
     conn: RTCConn,
     canStart: boolean
 ): IceCandidateExchange {

@@ -1,5 +1,5 @@
 import {PeerConnStatusBar} from "./PeerConnStatusBar";
-import {SignalServerStatusBar} from "./SignalServerStatusBar";
+import {RoomServerStatusBar} from "./RoomServerStatusBar";
 import {useContext} from "react";
 import {LogContext} from "../log/LogContext";
 import {AuthStatusBar} from "./AuthStatusBar";
@@ -14,7 +14,7 @@ export function SystemLog() {
                 <PeerConnStatusBar status={log.peerConnStatus}/>
             }
             { log.roomServer &&
-                <SignalServerStatusBar server={log.roomServer}/>
+                <RoomServerStatusBar server={log.roomServer}/>
             }
         </div>
     );

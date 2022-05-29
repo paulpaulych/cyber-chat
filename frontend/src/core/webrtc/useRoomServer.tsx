@@ -17,13 +17,13 @@ export type InSignal =
 
 export type InError = { type: "Error", code: "ALREADY_CONNECTED" | "PEER_NOT_CONNECTED" }
 
-export type SignalServer = {
+export type RoomServer = {
     lastSignal: InSignal,
     sendSignal: (s: Signal) => void,
     readyState: ReadyState
 }
 
-export function useSignalServer(url: string): SignalServer {
+export function useRoomServer(url: string): RoomServer {
     const ws = useWebSocket(url, {
         share: true
     });

@@ -1,5 +1,5 @@
 import React, {useContext, useEffect} from "react";
-import {SignalServer} from "../../core/webrtc/useSignalServer";
+import {RoomServer} from "../../core/webrtc/useRoomServer";
 import {useLocalMedia} from "../../core/useLocalMedia";
 import {Player} from "./Player";
 import {RTCConn, useRtcPeerConnection} from "../../core/webrtc/useRtcPeerConnection";
@@ -9,7 +9,7 @@ import {LogContext} from "../log/LogContext";
 
 export const VideoStreaming = (props: {
     mode: "send" | "recv",
-    server: SignalServer,
+    server: RoomServer,
 }) => {
     const conn = useRtcPeerConnection()
     useLoggingOf(conn)
@@ -21,7 +21,7 @@ export const VideoStreaming = (props: {
         : <RecvVideo conn={conn} server={props.server}/>
 }
 
-function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
+function SendVideo({server, conn}: { conn: RTCConn, server: RoomServer }) {
     const constraints = {
         video: { width: 640, height: 480 },
         audio: true
@@ -41,7 +41,7 @@ function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
     );
 }
 
-function RecvVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
+function RecvVideo({server, conn}: { conn: RTCConn, server: RoomServer }) {
     const {stream, error} = useReceiverNegotiation(server, conn)
 
     return (

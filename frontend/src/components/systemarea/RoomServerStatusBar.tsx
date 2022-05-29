@@ -1,8 +1,8 @@
-import {SignalServer} from "../../core/webrtc/useSignalServer";
+import {RoomServer} from "../../core/webrtc/useRoomServer";
 import React from "react";
 import {ReadyState} from "react-use-websocket";
 
-export function SignalServerStatusBar({ server }: { server: SignalServer }) {
+export function RoomServerStatusBar({ server }: { server: RoomServer }) {
     return (
         <div>
             <h3>ServerStatus: {localizeState(server.readyState)}</h3>
