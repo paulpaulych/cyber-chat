@@ -1,16 +1,21 @@
 import {PeerConnStatusBar} from "./PeerConnStatusBar";
 import {SignalServerStatusBar} from "./SignalServerStatusBar";
-import {RTCConnStatus} from "../../core/webrtc/useRtcPeerConnection";
-import {SignalServer} from "../../core/webrtc/useSignalServer";
+import {useContext} from "react";
+import {LogContext} from "../log/LogContext";
+import {AuthStatusBar} from "./AuthStatusBar";
 
-export function SystemLog(props: {
-    connStatus: RTCConnStatus,
-    signalServer: SignalServer
-}) {
+export function SystemLog() {
+    const log = useContext(LogContext)
+
     return (
         <div>
-            <PeerConnStatusBar status={props.connStatus}/>
-            <SignalServerStatusBar server={props.signalServer}/>
+            <AuthStatusBar auth={log.auth}/>
+            { log.peerConnStatus &&
+                <PeerConnStatusBar status={log.peerConnStatus}/>
+            }
+            { log.roomServer &&
+                <SignalServerStatusBar server={log.roomServer}/>
+            }
         </div>
     );
 }

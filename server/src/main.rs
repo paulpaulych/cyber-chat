@@ -1,6 +1,7 @@
 use actix::*;
+use actix_cors::Cors;
 use actix_files as fs;
-use actix_web::{App, HttpServer, middleware::Logger, Resource, web};
+use actix_web::{App, http, HttpServer, middleware::Logger, Resource, web};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::postgres::PgPoolOptions;
 
@@ -37,17 +38,24 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new(move || {
         let auth = HttpAuthentication::bearer(authenticate);
+
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allow_any_header()
+            .allowed_methods(vec!["GET", "POST", "PUT"])
+            .max_age(3600);
+
         App::new()
             .app_data(web::Data::new(jwt_utils.clone()))
             .app_data(web::Data::new(user_store.clone()))
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::new(signal_server.clone()))
-
+            .wrap(cors)
+            .wrap(Logger::default())
             .route("/login", web::get().to(login))
             .configure(public_ui_routes)
             .service(fs::Files::new("/static", "./static"))
-
             .service(web::scope("/api")
                 .wrap(auth)
                 .route("/users/me", web::get().to(get_me))
@@ -64,8 +72,6 @@ async fn main() -> std::io::Result<()> {
                     )
                 )
             )
-
-            .wrap(Logger::default())
     })
         .workers(2)
         .bind(("127.0.0.1", 8080))?

@@ -5,10 +5,12 @@ import {useCommandShell} from "./useCommandShell";
 import {TerminalInput, TerminalInputValue} from "./TerminalInput";
 import {Out, TerminalOutput} from "./renderTerminalOutput";
 import {Printable} from "./api/system-call";
+import {GeneralError} from "./GeneralError";
 
 const USER: string = "user"
 
-export function Terminal({processFactory}: {
+export function Terminal({error, processFactory}: {
+    error: string,
     processFactory: ProcessFactory
 }) {
     const [items, setItems] = useState<Out[]>([])
@@ -77,7 +79,10 @@ export function Terminal({processFactory}: {
 
     return (
         <div className="Terminal">
-            <TerminalOutput enablePrelude={shell.state === "waiting-for-cmd"} user={USER} output={items}/>
+            { error
+                ? <GeneralError error={error}/>
+                : <TerminalOutput enablePrelude={shell.state === "waiting-for-cmd"} user={USER} output={items}/>
+            }
             <TerminalInput onSubmit={onInput}/>
         </div>
     )
