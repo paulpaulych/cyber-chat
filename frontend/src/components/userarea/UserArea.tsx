@@ -8,8 +8,8 @@ export const UserArea = (props: {
     conn: RTCConn
     server: SignalServer
     mode: Mode
-}) =>
-    <div className="UserArea">
+}) => {
+    return <div className="UserArea">
         <div className="UserAreaVideo">
             <VideoTranslation mode={props.mode} server={props.server} conn={props.conn}/>
         </div>
@@ -17,3 +17,4 @@ export const UserArea = (props: {
             {/*<Terminal/>*/}
         </div>
     </div>
+}

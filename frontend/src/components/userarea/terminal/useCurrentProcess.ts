@@ -1,4 +1,4 @@
-import {LaunchProcess, OnInput, Process} from "./api/process-api";
+import {LaunchProcess, OnInput, Process, ProcessFactory} from "./api/process-api";
 import {useCallback, useState} from "react";
 import {ExitStatus, Printable, SysCall} from "./api/system-call";
 
@@ -21,8 +21,7 @@ export type ProcessExit = {
 export type StartProcess = (cmd: string) => void
 
 export function useCurrentProcess(props: {
-    launchers: { cmd: string, launch: LaunchProcess }[]
-    onStartFailed: (cmd: string) => void
+    processFactory: ProcessFactory
     onExit: (exit: ProcessExit) => void
     onPrint: (o: Printable[]) => void
 }): CurrentProcessHook {
@@ -33,7 +32,6 @@ export function useCurrentProcess(props: {
     }, [])
 
     const handleSysCall = useCallback((from: string, call: SysCall) => {
-        console.log("call: " + JSON.stringify(call))
         switch (call.type) {
             case "print": {
                 props.onPrint(call.values)
@@ -48,13 +46,13 @@ export function useCurrentProcess(props: {
     }, [detachProcess, props])
 
     const startProcess = useCallback((cmd: string) => {
-        const launcher = props.launchers.find(f => f.cmd === cmd)
-        if (!launcher) {
-            props.onStartFailed(cmd)
+        const res = props.processFactory(cmd)
+        if (res._tag !== "ok") {
+            props.onPrint(res.message)
             return
         }
 
-        setCurProcess(launcher.launch({sysCall: (call) => handleSysCall(cmd, call)}))
+        setCurProcess(res.launch({sysCall: (call) => handleSysCall(cmd, call)}))
     }, [props, handleSysCall])
 
     const interruptProcess = () => {

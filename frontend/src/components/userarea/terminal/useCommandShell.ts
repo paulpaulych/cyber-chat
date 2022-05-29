@@ -1,4 +1,4 @@
-import {LaunchProcess} from "./api/process-api";
+import {ProcessFactory} from "./api/process-api";
 import {useCallback} from "react";
 import {ProcessExit, useCurrentProcess} from "./useCurrentProcess";
 import {NEW_LINE, Printable} from "./api/system-call";
@@ -13,14 +13,10 @@ export type CmdShell =
     interrupt: () => void
 }
 
-export function useCommandShell({onPrint, launchers}: {
-    launchers: { cmd: string, launch: LaunchProcess }[],
+export function useCommandShell({onPrint, processFactory}: {
+    processFactory: ProcessFactory,
     onPrint: (o: Printable[]) => void
 }): CmdShell {
-    const onStartFailed = useCallback((cmd: string) => {
-        onPrint(["unknown command: " + cmd, NEW_LINE])
-    }, [onPrint])
-
     const onExit = useCallback((exit: ProcessExit) => {
         const {cmd, exitStatus} = exit
         switch (exitStatus.code) {
@@ -31,7 +27,7 @@ export function useCommandShell({onPrint, launchers}: {
         }
     }, [onPrint])
 
-    const process = useCurrentProcess({launchers, onStartFailed, onExit, onPrint})
+    const process = useCurrentProcess({processFactory, onExit, onPrint})
 
     switch (process.state) {
         case "none":

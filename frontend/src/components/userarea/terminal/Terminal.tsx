@@ -1,6 +1,6 @@
 import "./Terminal.css"
 import {useCallback, useState} from "react";
-import {LaunchProcess} from "./api/process-api";
+import {ProcessFactory} from "./api/process-api";
 import {useCommandShell} from "./useCommandShell";
 import {TerminalInput, TerminalInputValue} from "./TerminalInput";
 import {Out, TerminalOutput} from "./renderTerminalOutput";
@@ -8,8 +8,8 @@ import {Printable} from "./api/system-call";
 
 const USER: string = "user"
 
-export function Terminal(props: {
-    launchers: { cmd: string, launch: LaunchProcess }[]
+export function Terminal({processFactory}: {
+    processFactory: ProcessFactory
 }) {
     const [items, setItems] = useState<Out[]>([])
 
@@ -18,7 +18,7 @@ export function Terminal(props: {
     }, [setItems])
 
     const shell = useCommandShell({
-        launchers: props.launchers,
+        processFactory,
         onPrint: printables => appendOutput(printables.map(toTerminalOutput))
     })
 

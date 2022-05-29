@@ -1,22 +1,20 @@
-import React, {useMemo, useState} from 'react';
+import React, {Dispatch, SetStateAction, useCallback, useMemo, useState} from 'react';
 import {Mode, VideoChat} from "./components/VideoChat";
 import {SiteHeader} from "./components/SiteHeader";
 import "./App.css";
 import {echo} from "./components/userarea/commands/echo";
 import {Terminal} from "./components/userarea/terminal/Terminal";
 import {doSomeExternalWork} from "./components/userarea/commands/doSomeExternalWork";
+import {LaunchProcess, ProcessFactory} from "./components/userarea/terminal/api/process-api";
+import {NEW_LINE} from "./components/userarea/terminal/api/system-call";
 
 export default function App() {
     const [title, setTitle] = useState("Cyber Chat")
 
     const [mode, setMode] = useState<Mode | null>(null)
 
-    const launchers = useMemo(() => {
-        return [
-            { cmd: "echo", launch: echo },
-            { cmd: "change-title", launch: doSomeExternalWork(setTitle) }
-        ]
-    }, [setTitle])
+    const commands = useCommands({setTitle})
+    const processFactory = useProcessFactory(commands)
 
     return (
         <div className="App">
@@ -29,7 +27,28 @@ export default function App() {
                   </div>
                 : <VideoChat mode={mode}/>
             }
-            <Terminal launchers={launchers}/>
+            <Terminal processFactory={processFactory}/>
         </div>
     );
+}
+
+type Commands = Record<string, LaunchProcess>
+
+function useCommands(props: {
+    setTitle: Dispatch<SetStateAction<string>>
+}): Commands {
+    return useMemo(() => ({
+        "echo": echo,
+        "change-title": doSomeExternalWork(props.setTitle)
+    }), [props.setTitle])
+}
+
+function useProcessFactory(commands: Commands): ProcessFactory {
+    return useCallback((cmd: string) => {
+        const launch = commands[cmd]
+        if (!launch) {
+            return { _tag: "err", message: ["unknown process: " + cmd, NEW_LINE]}
+        }
+        return { _tag: "ok", launch }
+    }, [commands])
 }
