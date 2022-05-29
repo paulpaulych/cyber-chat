@@ -1,18 +1,25 @@
-import React from "react";
+import React, {useContext, useEffect} from "react";
 import {SignalServer} from "../../core/webrtc/useSignalServer";
 import {useLocalMedia} from "../../core/useLocalMedia";
 import {Player} from "./Player";
-import {RTCConn} from "../../core/webrtc/useRtcPeerConnection";
+import {RTCConn, useRtcPeerConnection} from "../../core/webrtc/useRtcPeerConnection";
 import {useSenderNegotiation} from "../../core/webrtc/useSenderNegotiation";
 import {useReceiverNegotiation} from "../../core/webrtc/useReceiverNegotiation";
+import {LogContext} from "../log/LogContext";
 
 export const VideoStreaming = (props: {
     mode: "send" | "recv",
     server: SignalServer,
-    conn: RTCConn
-}) => props.mode === "send"
-    ? <SendVideo conn={props.conn} server={props.server}/>
-    : <RecvVideo conn={props.conn} server={props.server}/>
+}) => {
+    const conn = useRtcPeerConnection()
+    useLoggingOf(conn)
+
+    if (!conn) return <></>
+
+    return props.mode === "send"
+        ? <SendVideo conn={conn} server={props.server}/>
+        : <RecvVideo conn={conn} server={props.server}/>
+}
 
 function SendVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
     const constraints = {
@@ -44,4 +51,14 @@ function RecvVideo({server, conn}: { conn: RTCConn, server: SignalServer }) {
             {error && <h3>ERROR: {error}</h3>}
         </div>
     )
+}
+
+function useLoggingOf(conn: RTCConn) {
+    const log = useContext(LogContext)
+
+    useEffect(() => {
+        if (!!conn) {
+            log.setPeerConnStatus(conn.status)
+        }
+    }, [log, conn])
 }
