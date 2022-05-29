@@ -11,7 +11,7 @@ type SenderNegotiation = {
 export function useSenderNegotiation(
     server: SignalServer,
     conn: RTCConn,
-    stream: MediaStream | null
+    stream: MediaStream | null,
 ): SenderNegotiation {
 
     const sdpExchange = useSenderSdpExchange(server, conn, stream)
@@ -27,7 +27,7 @@ export function useSenderNegotiation(
 function useSenderSdpExchange(
     server: SignalServer,
     conn: RTCConn,
-    stream: MediaStream | null
+    stream: MediaStream | null,
 ): { ready: boolean, error: string } {
     const [error, setError] = useState<string>()
 
@@ -51,7 +51,7 @@ function useSenderSdpExchange(
 
         conn.prepareOffer()
             .then((sdp) => {
-                server.sendSignal({type: "Offer", sdp })
+                server.sendSignal({type: "Offer", sdp})
                 setOfferSent(true)
             })
             .catch((e) => setError("can't send offer: " + e.message))
@@ -80,8 +80,5 @@ function useSenderSdpExchange(
             })
     }, [conn, server.lastSignal, offerSent, ready])
 
-    return {
-        ready,
-        error
-    }
+    return {ready, error}
 }

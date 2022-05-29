@@ -1,15 +1,17 @@
 import {Mode} from "../CyberChat";
-import {useSignalServer} from "../../core/webrtc/useSignalServer";
-import {useRtcPeerConnection} from "../../core/webrtc/useRtcPeerConnection";
-import {VideoTranslation} from "./VideoTranslation";
+import {SignalServer, useSignalServer} from "../../core/webrtc/useSignalServer";
+import {RTCConn, useRtcPeerConnection} from "../../core/webrtc/useRtcPeerConnection";
+import {VideoStreaming} from "./VideoStreaming";
 import {useContext, useEffect} from "react";
 import {LogContext} from "../log/LogContext";
 
 
 export function Room(props: {
     id: { value: string }
-    mode: Mode
+    mode: Mode,
+    streamActive: boolean
 }) {
+
     const mode: Mode = "send"
     const role = mode === "send" ? "sender" : "receiver"
     const url = "ws://localhost:8080/webrtc/room/main/" + role
@@ -17,16 +19,25 @@ export function Room(props: {
     const server = useSignalServer(url)
     const conn = useRtcPeerConnection()
 
-    {
-        const log = useContext(LogContext)
-        useEffect(() => {
-            log.setRoomServer(server)
-            log.setPeerConnStatus(conn.status)
-        }, [log, server, conn.status])
-    }
+    useLoggingOf(server, conn)
 
     return (<div>
         <h3>ROOM (id={props.id.value})</h3>
-        <VideoTranslation mode={props.mode} server={server} conn={conn}/>
+        { props.streamActive && conn && server &&
+            <VideoStreaming mode={props.mode} server={server} conn={conn}/>
+        }
     </div>)
+}
+
+function useLoggingOf(server: SignalServer, conn: RTCConn) {
+    const log = useContext(LogContext)
+
+    useEffect(() => {
+        if (!!server) {
+            log.setRoomServer(server)
+        }
+        if (!!conn) {
+            log.setPeerConnStatus(conn.status)
+        }
+    }, [log, server, conn])
 }

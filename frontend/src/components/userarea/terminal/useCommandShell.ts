@@ -21,7 +21,7 @@ export function useCommandShell({onPrint, processFactory}: {
         const {cmd, exitStatus} = exit
         switch (exitStatus.code) {
             case "ok":
-                return onPrint([NEW_LINE, `${cmd} finished`, NEW_LINE])
+                return
             case "err":
                 return onPrint([NEW_LINE, `${cmd} exited with error: ${exitStatus.error}`])
         }

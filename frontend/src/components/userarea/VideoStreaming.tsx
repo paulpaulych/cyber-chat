@@ -6,7 +6,7 @@ import {RTCConn} from "../../core/webrtc/useRtcPeerConnection";
 import {useSenderNegotiation} from "../../core/webrtc/useSenderNegotiation";
 import {useReceiverNegotiation} from "../../core/webrtc/useReceiverNegotiation";
 
-export const VideoTranslation = (props: {
+export const VideoStreaming = (props: {
     mode: "send" | "recv",
     server: SignalServer,
     conn: RTCConn

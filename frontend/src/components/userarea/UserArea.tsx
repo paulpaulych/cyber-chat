@@ -1,5 +1,5 @@
 import "./UserArea.css"
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {Auth} from "../auth/AuthContext";
 import {echo} from "./commands/echo";
 import {getMyId} from "./commands/getMyId";
@@ -7,29 +7,28 @@ import {LaunchProcess, ProcessFactory} from "./terminal/api/process-api";
 import {NEW_LINE} from "./terminal/api/system-call";
 import {Terminal} from "./terminal/Terminal";
 import {Room} from "./Room";
+import {createRoom} from "./commands/createRoom";
 
-type RoomId = {
+export type RoomId = {
     value: string
 }
 
-export const UserArea = ({auth}: {
-    auth: Auth
+export const UserArea = (props: {
+    auth: Auth,
 }) => {
-    const [error, setError] = useState<string>()
-    const [roomId] = useState<RoomId>()
+    const [roomId, setRoomId] = useState<RoomId>()
 
-    useEffect(() => {
-        if (auth._tag === "err") {
-            setError(auth.error)
-        }
-    }, [auth])
+    const error = props.auth._tag === "err" ? props.auth.error : null
+    const commands = useCommands({
+            auth: props.auth,
+            setRoomId: id => setRoomId(id)}
+        )
 
-    const commands = useCommands({auth, roomId})
     const processFactory = useProcessFactory(commands)
 
     return <div className="UserArea">
-        <div className="UserAreaVideo">
-            {roomId && <Room id={roomId} mode={"send"}/>}
+        <div className="UserAreaRoom">
+            {roomId && <Room streamActive={false} id={roomId} mode={"send"}/>}
         </div>
         <div className="UserAreaTerminal">
             <Terminal error={error} processFactory={processFactory}/>
@@ -41,18 +40,21 @@ type Commands = Record<string, LaunchProcess>
 
 function useCommands(props: {
     auth: Auth,
-    roomId: RoomId | null
+    setRoomId: (id: RoomId) => void,
 }): Commands {
     return useMemo(() => {
-        const commands: Commands = {}
-
-        if (props.auth._tag === "ok") {
-            commands["me"] = getMyId(props.auth.user)
+        if (props.auth._tag !== "ok") {
+            return {}
         }
 
-        commands["echo"] = echo
-
-        return commands
+        return {
+            "me": getMyId(props.auth.user),
+            "echo": echo,
+            "room": createRoom({
+                user: props.auth.user,
+                setRoomId: props.setRoomId
+            })
+        }
     }, [props])
 }
 

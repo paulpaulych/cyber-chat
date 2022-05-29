@@ -34,7 +34,7 @@ pub async fn create_room(
     rooms.save(&room).await
         .map_err(ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(RoomCreatedRes { id: room.id.0.to_string() }))
+    Ok(HttpResponse::Created().json(RoomCreatedRes { id: room.id.0.to_string() }))
 }
 
 #[derive(Deserialize, Debug)]
